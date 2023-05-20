@@ -5,3 +5,6 @@
 #pragma once
 
 #include "err.hpp"
+
+#include "Elbow.hpp"
+#include "LogMeans.hpp"

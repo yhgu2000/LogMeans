@@ -85,7 +85,7 @@ try {
     std::cout << "Command-Line App"
                  "\n"
                  "\nBuilt: " __TIME__ " (" __DATE__ ")"
-                 "\nProject: " UnnamedProject_VERSION "\n"
+                 "\nProject: " LogMeans_VERSION "\n"
                  "\nCopyright (C) 2023 Yuhao Gu. All Rights Reserved."
               << std::endl;
     return 0;
