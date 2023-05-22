@@ -15,7 +15,10 @@ target_include_directories(Lib
     $<INSTALL_INTERFACE:include>
 )
 
-target_link_libraries(Lib PUBLIC Eigen3::Eigen Boost::json)
+target_link_libraries(Lib
+  PUBLIC Eigen3::Eigen Boost::json
+  PRIVATE OpenMP::OpenMP_CXX
+)
 
 install(TARGETS Lib EXPORT ${EXPORT_TARGETS})
 install(DIRECTORY Lib TYPE INCLUDE PATTERN "*.cpp" EXCLUDE)

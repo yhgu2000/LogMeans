@@ -29,3 +29,6 @@ endif()
 
 # Eigen
 find_package(Eigen3 REQUIRED)
+
+# OpenMP
+find_package(OpenMP REQUIRED)
