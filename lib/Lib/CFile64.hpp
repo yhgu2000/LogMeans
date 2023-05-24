@@ -65,16 +65,34 @@ public:
   std::FILE* operator+() const noexcept { return mPtr; }
 
   template<typename T, typename = std::enable_if_t<std::is_pod_v<T>>>
-  CFile64& operator<<(const T& t) noexcept(false)
+  CFile64& operator<<(const T& t) const noexcept(false)
   {
     write(&t, sizeof(T), 1);
     return *this;
   }
 
   template<typename T, typename = std::enable_if_t<std::is_pod_v<T>>>
-  CFile64& operator>>(T& t) noexcept(false)
+  CFile64& operator>>(T& t) const noexcept(false)
   {
     read(&t, sizeof(T), 1);
+    return *this;
+  }
+
+  template<typename T, typename = std::enable_if_t<std::is_pod_v<T>>>
+  CFile64& operator<<(const std::vector<T>& vec) const noexcept(false)
+  {
+    *this << vec.size();
+    write(vec.data(), sizeof(T), vec.size());
+    return *this;
+  }
+
+  template<typename T, typename = std::enable_if_t<std::is_pod_v<T>>>
+  CFile64& operator>>(std::vector<T>& vec) const noexcept(false)
+  {
+    std::size_t size;
+    *this >> size;
+    vec.resize(size);
+    read(vec.data(), sizeof(T), vec.size());
     return *this;
   }
 
@@ -236,6 +254,28 @@ public:
         std::fclose(i);
   }
 };
+
+template<typename T, typename = std::enable_if_t<!std::is_pod_v<T>>>
+const CFile64&
+operator<<(const CFile64& f, const std::vector<T>& vec) noexcept(false)
+{
+  f << vec.size();
+  for (auto&& i : vec)
+    f << i;
+  return *this;
+}
+
+template<typename T, typename = std::enable_if_t<!std::is_pod_v<T>>>
+const CFile64&
+operator>>(const CFile64& f, std::vector<T>& vec) noexcept(false)
+{
+  std::size_t size;
+  f >> size;
+  vec.resize(size);
+  for (auto&& i : vec)
+    f >> i;
+  return *this;
+}
 
 } // namespace Lib
 

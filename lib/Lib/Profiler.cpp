@@ -1,4 +1,5 @@
 #include "Profiler.hpp"
+#include <boost/json.hpp>
 #include <cassert>
 #include <ostream>
 #include <vector>
@@ -43,10 +44,14 @@ operator<<(std::ostream& out, const Lib::Profiler& prof)
     else {
       if (!stack.empty())
         out << '\t';
-      out << i.mTag << " [" << (i.mTime - last) << "] : " << i.mInfo->info()
-          << '\n';
-      if (i.mInfo == &Profiler::Scope::gEnterInfo)
-        stack.push_back(&i);
+      out << i.mTag << " [" << (i.mTime - last) << ']';
+      if (i.mInfo) {
+        if (i.mInfo == &Profiler::Scope::gEnterInfo)
+          stack.push_back(&i);
+        else
+          out << " : " << i.mInfo->info();
+      }
+      out << '\n';
     }
 
     last = i.mTime;
@@ -56,6 +61,67 @@ operator<<(std::ostream& out, const Lib::Profiler& prof)
 }
 
 namespace Lib {
+
+Profiler
+Profiler::from_json(const bj::value& json,
+                    std::set<std::string>& tags) noexcept(false)
+{
+  const auto& arr = json.as_array();
+
+  Profiler prof;
+  for (auto&& i : arr) {
+    const auto& ent = i.as_array();
+
+    const auto* tag =
+      tags.emplace(ent.at(0).as_string().c_str()).first->c_str();
+
+    auto time = prof.mHead->mTime +
+                sc::duration_cast<Clock::duration>(
+                  sc::duration<double, std::nano>(ent.at(1).as_double()));
+
+    Info* info;
+    if (ent.size() <= 2)
+      info = nullptr;
+    else
+      info = new StrInfo(ent.at(2).as_string().c_str());
+
+    prof.mHead->mNext =
+      new Entry(time, tag, info, bool(info), prof.mHead->mNext);
+  }
+
+  return prof;
+}
+
+Profiler::Entry&
+Profiler::time(const char* tag, Info* info, bool owned) noexcept
+{
+  assert(info || !owned); // owned 无效时 info 必须为空
+
+  auto* entry = new Entry(Clock::now(), tag, info, owned, nullptr);
+  auto* next = mHead->mNext.load(std::memory_order_relaxed);
+  do {
+    entry->mNext.store(next, std::memory_order_relaxed);
+  } while (!mHead->mNext.compare_exchange_weak(
+    next, entry, std::memory_order_relaxed));
+  return *entry;
+}
+
+bj::value
+Profiler::to_json() const noexcept(false)
+{
+  bj::array arr;
+
+  for (auto&& i : *this) {
+    bj::array ent;
+    ent.emplace_back(i.mTag);
+    sc::duration<double, std::nano> dura(i.mTime - mHead->mTime);
+    ent.emplace_back(dura.count());
+    if (i.mInfo)
+      ent.emplace_back(i.mInfo->info());
+  }
+
+  return arr;
+}
 
 Profiler::Entry::~Entry() noexcept
 {
@@ -72,20 +138,6 @@ Profiler::Entry::~Entry() noexcept
       next = nextnext;
     }
   }
-}
-
-Profiler::Entry&
-Profiler::time(const char* tag, Info* info, bool owned) noexcept
-{
-  assert(info || !owned); // owned 无效时 info 必须为空
-
-  auto* entry = new Entry(Clock::now(), tag, info, owned);
-  auto* next = mHead->mNext.load(std::memory_order_relaxed);
-  do {
-    entry->mNext.store(next, std::memory_order_relaxed);
-  } while (!mHead->mNext.compare_exchange_weak(
-    next, entry, std::memory_order_relaxed));
-  return *entry;
 }
 
 std::string

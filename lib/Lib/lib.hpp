@@ -12,6 +12,32 @@ namespace Lib {
 
 namespace bj = boost::json;
 
+/**
+ * @brief 数据集，每列是一个数据点，列号为 ID。
+ */
+using DataSet = Eigen::MatrixXd;
+
+/**
+ * @brief 聚类结果，一个列向量，每行的整数是数据集对应列的类别号。
+ */
+using Catalog = Eigen::VectorXi;
+
+/**
+ * @brief 误差历史，两列向量，第一列是聚类数，第二列是对应的误差。
+ */
+class MseHistory
+  : public std::vector<std::pair<Catalog::value_type, DataSet::value_type>>
+{
+  using _T = MseHistory;
+  using _S = std::vector<std::pair<Catalog::value_type, DataSet::value_type>>;
+
+public:
+  static MseHistory json_to(const bj::value& json);
+
+public:
+  bj::value to_json() const;
+};
+
 template<typename _Scalar, int _Rows = -1, int _Cols = -1>
 static Eigen::Matrix<_Scalar, _Rows, _Cols>
 json_to_matx(const bj::value& json)
@@ -134,21 +160,5 @@ matx_load_bin(Eigen::Matrix<_Scalar, _Rows, _Cols>* matx, const char* path)
     file.read(matx->data() + begin, sizeof(_Scalar), tsize);
   }
 }
-
-/**
- * @brief 数据集，每列是一个数据点，列号为 ID。
- */
-using DataSet = Eigen::MatrixXd;
-
-/**
- * @brief 聚类结果，一个列向量，每行的整数是数据集对应列的类别号。
- */
-using Catalog = Eigen::VectorXi;
-
-/**
- * @brief 误差历史，两列向量，第一列是聚类数，第二列是对应的误差。
- */
-using MseHistory =
-  std::vector<std::pair<Catalog::value_type, DataSet::value_type>>;
 
 } // namespace Lib
