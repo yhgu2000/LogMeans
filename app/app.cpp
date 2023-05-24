@@ -1,25 +1,125 @@
 #include "project.h"
 #include <Lib/hpp>
-#include <array>
 #include <boost/program_options.hpp>
+#include <fstream>
 #include <iomanip>
 #include <iostream>
 
 using namespace std::string_literals;
+using namespace Lib;
 
 namespace po = boost::program_options;
 
-int
-subcmd(int argc, char* argv[])
+static const char kFormatHelp[] = R"(
+JSON IO Format Definitions:
+  Input ::= {
+    "dataset": Matx | string,   # string for binary output path
+    "cata": string?,            # output binary if exists
+    }
+  Output ::= {
+    "cata": Matx | string,      # string for binary output path
+    "k": int,
+    "mse": number,
+    "msehist": MseHistory,
+    "prof": Profile,
+    }
+  Matx ::= {
+    "rows": int,
+    "cols": int,
+    "data": number[],
+    }
+  MseHistory ::=
+    [number, number][]          # cata, mse
+  Profile ::=
+    [string, number, string?]   # tag, time, info
+)";
+
+/**
+ * @brief 解析输入文件。
+ *
+ * @param[in] path JSON 输入文件路径。
+ * @param[out] ds 数据集。
+ * @param[out] cataOut 类别输出路径，如果为空则表示以 JSON 格式输出。
+ */
+void
+parse_input(const char* path, DataSet* ds, std::string* cataOut)
 {
-  po::options_description od("'subcmd' Options");
-  od.add_options()                                        //
-    ("help,h", "print help info")                         //
-    ("output,o", po::value<std::string>(), "output path") //
+  bj::value val;
+  {
+    static const bj::parse_options kParseOption{
+      .max_depth = 4,
+      .allow_comments = true,
+      .allow_trailing_commas = true,
+      .allow_invalid_utf8 = false,
+    };
+
+    std::ifstream fin(path);
+    val = bj::parse(fin, {}, kParseOption);
+  }
+
+  const auto& obj = val.as_object();
+
+  const auto& dataset = obj.at("dataset");
+  if (dataset.is_object())
+    *ds = json_to_matx<DataSet::value_type>(dataset);
+  else
+    matx_load_bin(ds, dataset.as_string().c_str());
+
+  auto iter = obj.find("cata");
+  if (iter != obj.end())
+    *cataOut = iter->value().as_string();
+}
+
+/**
+ * @brief 生成输出文件。
+ *
+ * @param[in] path JSON 文件输出路径。
+ * @param[in] cata 聚类结果。
+ * @param[in] cataOut 二进制聚类结果输出路径，为空则将结果内联到 JSON 中。
+ * @param[in] k 聚类数。
+ * @param[in] mse 误差。
+ * @param[in] mseHist 误差历史。
+ * @param[in] prof 用时统计。
+ */
+void
+generate_output(const char* path,
+                const Catalog& cata,
+                const std::string& cataOut,
+                int k,
+                DataSet::value_type mse,
+                const MseHistory& mseHist,
+                const Profiler& prof)
+{
+  bj::object obj;
+
+  if (cataOut.empty())
+    obj["cata"] = matx_to_json(cata);
+  else {
+    obj["cata"] = cataOut;
+    matx_dump_bin(cata, cataOut.c_str());
+  }
+
+  obj["k"] = k;
+  obj["mse"] = mse;
+  obj["msehist"] = mseHist.to_json();
+  obj["prof"] = prof.to_json();
+}
+
+int
+kmeans(int argc, char* argv[])
+{
+  po::options_description od("'kemans' Options");
+  od.add_options()                                             //
+    ("help,h", "print help info")                              //
+    ("input,i", po::value<std::string>(), "input json path")   //
+    ("output,o", po::value<std::string>(), "output json path") //
+    ("k", po::value<int>(), "number of clusters")              //
     ;
 
   po::positional_options_description pod;
+  pod.add("input", 1);
   pod.add("output", 1);
+  pod.add("k", 1);
 
   po::variables_map vmap;
   po::store(
@@ -28,14 +128,38 @@ subcmd(int argc, char* argv[])
   po::notify(vmap);
 
   if (vmap.count("help") || argc == 1) {
-    std::cout << od << std::endl;
+    std::cout << od << kFormatHelp << std::endl;
     return 0;
   }
 
-  std::cout << "output path is '" << vmap["output"].as<std::string>() << "'\n"
-            << std::flush;
+  auto input = vmap["input"].as<std::string>();
+  auto output = vmap["output"].as<std::string>();
+  auto k = vmap["k"].as<int>();
+
+  DataSet ds;
+  std::string cataOut;
+  parse_input(input.c_str(), &ds, &cataOut);
+
+  Catalog cata;
+  DataSet::value_type mse;
+  KMeans algo;
+  algo(ds, k, &cata, &mse);
+
+  generate_output(output.c_str(), cata, cataOut, k, mse, MseHistory(), algo);
 
   return 0;
+}
+
+int
+elbow(int argc, char* argv[])
+{
+  abort();
+}
+
+int
+logmeans(int argc, char* argv[])
+{
+  abort();
 }
 
 struct SubCmdFunc
@@ -45,7 +169,7 @@ struct SubCmdFunc
 };
 
 const SubCmdFunc kSubCmdFuncs[] = {
-  { "subcmd", "subcmd example", &subcmd },
+  { "kmeans", "manual K-Means cluster", &kmeans },
   // TODO
 };
 

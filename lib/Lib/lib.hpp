@@ -32,9 +32,25 @@ class MseHistory
   using _S = std::vector<std::pair<Catalog::value_type, DataSet::value_type>>;
 
 public:
-  static MseHistory json_to(const bj::value& json);
+  using _S::_S;
 
 public:
+  static MseHistory from_json(const bj::value& json); // TODO 用不到，暂时不做
+
+public:
+  /**
+   * @brief 导出 JSON 格式。
+   *
+   * @return bj::value 格式为：
+   *
+   * ```json
+   * [
+   *  [ 2, 0.123 ],
+   *  [ 3, 0.456 ],
+   *  [ 4, 0.789 ]
+   * ] // 每行是聚类结果和对应的误差。
+   * ```
+   */
   bj::value to_json() const;
 };
 

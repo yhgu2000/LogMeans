@@ -3,7 +3,10 @@
 namespace Lib {
 
 void
-KMeans::operator()(const DataSet& data, int k, Catalog* cata, float* mse)
+KMeans::operator()(const DataSet& data,
+                   int k,
+                   Catalog* cata,
+                   DataSet::value_type* mse)
 {
   struct SomeInfo : public Info
   {

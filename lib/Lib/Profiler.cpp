@@ -123,6 +123,9 @@ Profiler::to_json() const noexcept(false)
   return arr;
 }
 
+Profiler::Scope::EnterInfo Profiler::Scope::gEnterInfo;
+Profiler::Scope::LeaveInfo Profiler::Scope::gLeaveInfo;
+
 Profiler::Entry::~Entry() noexcept
 {
   if (mOwned)

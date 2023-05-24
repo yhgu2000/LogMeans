@@ -260,7 +260,7 @@ private:
 namespace Lib {
 
 inline Profiler::Profiler()
-  : mHead(new Entry(Clock::now(), nullptr, nullptr, false))
+  : mHead(new Entry(Clock::now(), nullptr, nullptr, false, nullptr))
 {
 }
 
