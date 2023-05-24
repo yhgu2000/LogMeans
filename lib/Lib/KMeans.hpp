@@ -7,6 +7,7 @@ namespace Lib {
 
 class KMeans : public Profiler
 {
+public:
   /**
    * @param[in] data 数据集
    * @param[in] k 聚类数

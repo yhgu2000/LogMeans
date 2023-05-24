@@ -14,8 +14,8 @@ BOOST_AUTO_TEST_CASE(DataSet_io_json)
   DataSet ds(13, 17);
   for (auto *p = ds.data(), *end = ds.data() + ds.size(); p != end; ++p)
     *p = genrand::norm();
-  auto json = ds.to_json();
-  auto ds2 = DataSet::from_json(json);
+  auto json = matx_to_json(ds);
+  auto ds2 = json_to_matx<DataSet::value_type>(json);
   BOOST_TEST((ds == ds2));
 }
 
@@ -24,10 +24,10 @@ BOOST_AUTO_TEST_CASE(DataSet_io_bin)
   DataSet ds(32, 32);
   for (auto *p = ds.data(), *end = ds.data() + ds.size(); p != end; ++p)
     *p = genrand::norm();
-  ds.dump_bin("dataset");
+  matx_dump_bin(ds, "dataset");
 
   DataSet ds2;
-  ds2.load_bin("dataset");
+  matx_load_bin(&ds2, "dataset");
   BOOST_TEST((ds == ds2));
 }
 
@@ -36,8 +36,8 @@ BOOST_AUTO_TEST_CASE(Catalog_io_json)
   Catalog ct(7);
   for (auto *p = ct.data(), *end = ct.data() + ct.size(); p != end; ++p)
     *p = genrand::range<int>();
-  auto json = ct.to_json();
-  auto ct2 = Catalog::from_json(json);
+  auto json = matx_to_json(ct);
+  auto ct2 = json_to_matx<int>(json);
   BOOST_TEST((ct == ct2));
 }
 
@@ -46,10 +46,10 @@ BOOST_AUTO_TEST_CASE(Catalog_io_bin)
   Catalog ct(11);
   for (auto *p = ct.data(), *end = ct.data() + ct.size(); p != end; ++p)
     *p = genrand::range<int>();
-  ct.dump_bin("catalog");
+  matx_dump_bin(ct, "catalog");
 
   Catalog ct2;
-  ct2.load_bin("catalog");
+  matx_load_bin(&ct2, "catalog");
   BOOST_TEST((ct == ct2));
 }
 
