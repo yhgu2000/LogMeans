@@ -7,4 +7,5 @@
 #include "err.hpp"
 
 #include "Elbow.hpp"
+#include "KMeans.hpp"
 #include "LogMeans.hpp"

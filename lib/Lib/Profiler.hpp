@@ -5,6 +5,11 @@
 #include <chrono>
 #include <memory>
 #include <ostream>
+#include <set>
+
+namespace boost::json {
+class value;
+};
 
 namespace Lib {
 class Profiler;
@@ -17,6 +22,8 @@ std::ostream&
 operator<<(std::ostream& out, const Lib::Profiler& prof);
 
 namespace Lib {
+
+namespace bj = boost::json;
 
 /**
  * @brief 线程安全的性能分析器。
@@ -41,12 +48,39 @@ public:
     virtual std::string info() noexcept = 0;
   };
 
+  /**
+   * @brief 保存一个字符串的简单信息类。
+   */
+  struct StrInfo
+    : public Info
+    , public std::string
+  {
+    using std::string::string;
+    std::string info() noexcept override { return *this; }
+  };
+
   class Entry;
   class Iterator;
   class Scope;
   class Profiled;
 
 public:
+  /**
+   * @brief 从 JSON 导入。
+   *
+   * @param json JSON 对象。
+   * @param tags 用于保存标签字符串所有权的集合容器。
+   *
+   * @note \p tags 不能为 unordered_map，以免发生重哈希时 Profiler
+   * 中的指针失效！
+   */
+  static Profiler from_json(const bj::value& json,
+                            std::set<std::string>& tags) noexcept(false);
+
+public:
+  /**
+   * @brief 构造函数，构造时刻为初始计时点。
+   */
   Profiler();
 
   /**
@@ -80,6 +114,11 @@ public:
   Entry& time(const char* tag,
               Info* info = nullptr,
               bool owned = true) noexcept;
+
+  /**
+   * @brief 导出到 JSON。
+   */
+  bj::value to_json() const noexcept(false);
 
 public:
   ///@name 迭代器。
@@ -117,16 +156,21 @@ public:
   ~Entry() noexcept;
 
 private:
-  std::atomic<Entry*> mNext{ nullptr };
+  std::atomic<Entry*> mNext;
 
 private:
   Entry() = default;
 
-  Entry(Clock::time_point time, const char* tag, Info* info, bool owned)
+  Entry(Clock::time_point time,
+        const char* tag,
+        Info* info,
+        bool owned,
+        Entry* next)
     : mOwned(owned)
     , mInfo(info)
     , mTag(tag)
     , mTime(time)
+    , mNext(next)
   {
   }
 };
@@ -216,7 +260,7 @@ private:
 namespace Lib {
 
 inline Profiler::Profiler()
-  : mHead(new Entry(Clock::now(), nullptr, nullptr, false))
+  : mHead(new Entry(Clock::now(), nullptr, nullptr, false, nullptr))
 {
 }
 
