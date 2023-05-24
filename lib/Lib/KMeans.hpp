@@ -2,6 +2,7 @@
 
 #include "Profiler.hpp"
 #include "lib.hpp"
+#include "DistinctRandom.cpp"
 
 namespace Lib {
 
@@ -13,6 +14,8 @@ class KMeans : public Profiler
    * @param[out] cata 聚类结果
    * @param[out] mse 误差
    */
+  double error; //迭代过程的mse
+  double eps = 1e-6;   //收敛阈值
   void operator()(const DataSet& data, int k, Catalog* cata, float* mse);
 };
 
