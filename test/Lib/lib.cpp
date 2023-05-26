@@ -24,10 +24,10 @@ BOOST_AUTO_TEST_CASE(DataSet_io_bin)
   DataSet ds(32, 32);
   for (auto *p = ds.data(), *end = ds.data() + ds.size(); p != end; ++p)
     *p = genrand::norm();
-  ds.dump_bin("dataset");
+  matx_dump_bin(ds, "dataset");
 
   DataSet ds2;
-  ds2.load_bin("dataset");
+  matx_load_bin(&ds2, "dataset");
   BOOST_TEST((ds == ds2));
 }
 

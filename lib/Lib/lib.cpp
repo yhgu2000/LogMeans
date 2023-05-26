@@ -1,6 +1,4 @@
 #include "lib.hpp"
-#include "CFile64.hpp"
-#include <omp.h>
 
 namespace Lib {
 

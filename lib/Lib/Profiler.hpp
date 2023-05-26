@@ -273,7 +273,7 @@ Profiler::initial() const noexcept
 inline Profiler::Iterator
 Profiler::begin() const noexcept
 {
-  return Iterator(mHead.get());
+  return Iterator(mHead->mNext.load(std::memory_order_relaxed));
 }
 
 inline Profiler::Iterator
