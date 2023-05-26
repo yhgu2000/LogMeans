@@ -13,64 +13,68 @@ namespace {
 
 struct HeapEntry
 {
-  int mL, mR;
-  DataSet::value_type mLmse, mRmse;
+  std::size_t mL, mR;
 };
 
-inline bool
-operator<(const HeapEntry& lhs, const HeapEntry& rhs)
-{
-  return (lhs.mRmse / lhs.mLmse) < (rhs.mRmse / rhs.mLmse);
-}
-
-inline bool
-operator>(const HeapEntry& lhs, const HeapEntry& rhs)
-{
-  return (lhs.mRmse / lhs.mLmse) > (rhs.mRmse / rhs.mLmse);
-}
-
-/// @brief 应该算是个大顶堆
+/**
+ * @brief 算法专用的大顶堆类。
+ */
 struct Heap : public std::vector<HeapEntry>
 {
   using _T = Heap;
   using _S = std::vector<HeapEntry>;
 
-  Heap()
+  MseHistory& mMseHist;
+
+  Heap(MseHistory& mseHist)
     : _S(1) // 让下标从 1 开始
+    , mMseHist{ mseHist }
   {
   }
 
-  void heapify();
+  bool lt(const HeapEntry& lhs, const HeapEntry& rhs) const
+  {
+    return (mMseHist[lhs.mR].second / mMseHist[lhs.mL].second) <
+           (mMseHist[rhs.mR].second / mMseHist[rhs.mL].second);
+  }
+
+  bool gt(const HeapEntry& lhs, const HeapEntry& rhs) const
+  {
+    return (mMseHist[lhs.mR].second / mMseHist[lhs.mL].second) >
+           (mMseHist[rhs.mR].second / mMseHist[rhs.mL].second);
+  }
+
+  // void heapify();
 
   void heap_push(HeapEntry ent);
 
   HeapEntry heap_pop();
 };
 
-void
-Heap::heapify()
-{
-  auto i = size() >> 1;
-  if ((size() & 1) != 0) {
-    auto& parent = self[i];
-    auto& child = self[i << 1];
-    if (child > parent)
-      std::swap(child, parent);
-    --i;
-  }
+// void
+// Heap::heapify()
+// {
+//   auto i = size() >> 1;
+//   if ((size() & 1) != 0) {
+//     auto& parent = self[i];
+//     auto& child = self[i << 1];
+//     if (child > parent)
+//       std::swap(child, parent);
+//     --i;
+//   }
 
-  while (i != 0) {
-    auto& parent = self[i];
-    auto* child = &self[i << 1];
+//   while (i != 0) {
+//     auto& parent = self[i];
+//     auto* child = &self[i << 1];
 
-    if (*(child + 1) > *child)
-      ++child;
-    if (*child > parent)
-      std::swap(*child, parent);
+//     if (*(child + 1) > *child)
+//       ++child;
+//     if (*child > parent)
+//       std::swap(*child, parent);
 
-    --i;
-  }
-}
+//     --i;
+//   }
+// }
 
 void
 Heap::heap_push(HeapEntry ent)
@@ -80,7 +84,7 @@ Heap::heap_push(HeapEntry ent)
   if ((size() & 1) != 0) {
     auto& parent = self[i >> 1];
     auto& child = self[i];
-    if (child > parent)
+    if (gt(child, parent))
       std::swap(child, parent);
     i >>= 1;
   }
@@ -89,9 +93,9 @@ Heap::heap_push(HeapEntry ent)
     auto& parent = self[i];
     auto* child = &self[i << 1];
 
-    if (*(child + 1) > *child)
+    if (gt(*(child + 1), *child))
       ++child;
-    if (*child > parent)
+    if (gt(*child, parent))
       std::swap(*child, parent);
   }
 }
@@ -111,7 +115,7 @@ Heap::heap_pop()
     if (i + 1 < size()) {
       auto& rchild = self[i + 1];
 
-      if (lchild > rchild) {
+      if (gt(lchild, rchild)) {
         *parent = std::move(lchild);
         parent = &lchild;
       }
@@ -143,39 +147,56 @@ LogMeans::operator()(const DataSet& data,
 {
   mseHist->clear();
 
-  HeapEntry ent = { 1, int(data.cols()) };
-  std::map<int, DataSet::value_type> cache;
+  std::map<int, std::size_t> cache;
 
-  mKMeans(data, ent.mL, cata, &ent.mLmse);
-  mseHist->emplace_back(ent.mL, ent.mLmse);
-  cache.emplace(ent.mL, ent.mLmse);
+  /**
+   * xxxIndex 变量里存的是 mseHist 中项的索引，
+   * mseHist 中保存的是聚类数 k 到 mse 的映射。
+   */
 
-  mKMeans(data, ent.mR, cata, &ent.mRmse);
-  mseHist->emplace_back(ent.mR, ent.mRmse);
-  cache.emplace(ent.mR, ent.mRmse);
+  std::size_t lftIndex = 0;
+  cache.emplace(1, 0);
+  {
+    DataSet::value_type mse;
+    mKMeans(data, 1, cata, &mse);
+    mseHist->emplace_back(1, mse);
+  }
 
-  Heap heap;
-  while (ent.mR - ent.mL > 1) {
-    auto mid = (ent.mL + ent.mR) / 2;
-    DataSet::value_type midMse;
+  std::size_t rhtIndex = 1;
+  cache.emplace(int(data.cols()), 1);
+  {
+    DataSet::value_type mse;
+    mKMeans(data, data.cols(), cata, &mse);
+    mseHist->emplace_back(int(data.cols()), mse);
+  }
+
+  auto& hist = *mseHist;
+  Heap heap(hist);
+  while (hist[rhtIndex].first - hist[lftIndex].first > 1) {
+    auto mid = (hist[rhtIndex].first + hist[lftIndex].first) / 2;
+    std::size_t midIndex;
 
     auto it = cache.find(mid);
     if (it != cache.end())
-      midMse = it->second;
+      midIndex = it->second;
 
     else {
-      mKMeans(data, mid, cata, &midMse);
-      mseHist->emplace_back(mid, midMse);
-      cache.emplace_hint(it, mid, midMse);
+      midIndex = mseHist->size();
+      cache.emplace_hint(it, mid, midIndex);
+
+      DataSet::value_type mse;
+      mKMeans(data, mid, cata, &mse);
+      mseHist->emplace_back(mid, mse);
     }
 
-    heap.heap_push({ ent.mL, mid, ent.mLmse, midMse });
-    heap.heap_push({ mid, ent.mR, midMse, ent.mRmse });
+    heap.heap_push({ lftIndex, midIndex });
+    heap.heap_push({ midIndex, rhtIndex });
 
-    ent = heap.heap_pop();
+    auto top = heap.heap_pop();
+    lftIndex = top.mL, rhtIndex = top.mR;
   }
 
-  *ansIndex = mseHist->size() - 1;
+  *ansIndex = rhtIndex;
 }
 
 void
