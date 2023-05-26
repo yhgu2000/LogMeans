@@ -8,21 +8,15 @@ KMeans::operator()(const DataSet& data,
                    Catalog* cata,
                    DataSet::value_type* mse)
 {
-  struct SomeInfo : public Info
-  {
-  public:
-    std::string info() noexcept override { return "bla bla bla"; }
-  };
+  // 输出行数应该和输入的列数相等
+  cata->resize(data.cols());
 
-  // 计时一次
-  time("KMeans", new SomeInfo(), true);
+  // 输出取值应该正好覆盖 [0, k)
+  for (int i = 0; i < cata->size(); ++i)
+    (*cata)(i) = i % k;
 
-  {
-    // 计时一个作用域
-    Scope scope(*this, "KMeans-Scope-1");
-  }
-
-  // TODO
+  // 聚类误差应该随 k 增大而递减
+  *mse = 1.0 / k;
 }
 
 } // namespace Lib

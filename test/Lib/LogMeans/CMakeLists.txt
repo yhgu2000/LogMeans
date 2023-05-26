@@ -3,12 +3,12 @@ override_glob(Lib_src
   EXPRESSIONS *
 )
 
-add_executable(test_log_means test.cpp ${Lib_src})
+add_executable(test_LogMeans test.cpp ${Lib_src})
 
-target_include_directories(test_log_means PRIVATE . ${CMAKE_SOURCE_DIR}/lib)
+target_include_directories(test_LogMeans PRIVATE . ${CMAKE_SOURCE_DIR}/lib)
 
-target_link_libraries(test_log_means PRIVATE test_util
+target_link_libraries(test_LogMeans PRIVATE test_util
   Eigen3::Eigen Boost::json OpenMP::OpenMP_CXX
 )
 
-target_compile_definitions(test_log_means PRIVATE BOOST_TEST_MODULE=log_means)
+target_compile_definitions(test_LogMeans PRIVATE BOOST_TEST_MODULE=log_means)
