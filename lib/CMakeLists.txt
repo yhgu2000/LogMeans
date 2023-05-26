@@ -10,7 +10,7 @@ file(GLOB Lib_src Lib/*)
 add_library(Lib ${Lib_src})
 
 target_include_directories(Lib
-  INTERFACE
+  PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
     $<INSTALL_INTERFACE:include>
 )

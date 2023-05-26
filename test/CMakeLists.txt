@@ -12,6 +12,9 @@ if(NOT Boost_UNIT_TEST_FRAMEWORK_FOUND)
   return()
 endif()
 
+# 用于构建时的“文件级多态”
+include(override_glob)
+
 
 
 #

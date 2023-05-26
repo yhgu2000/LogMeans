@@ -4,8 +4,23 @@
 
 
 #
+# 时间戳目标
+#
+add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/timestamp.h
+  COMMAND ${CMAKE_COMMAND} -P ${CMAKE_BINARY_DIR}/cmake/timestamp.cmake
+  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+  DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/timestamp
+)
+
+add_library(timestamp INTERFACE ${CMAKE_CURRENT_BINARY_DIR}/timestamp.h)
+
+target_include_directories(timestamp INTERFACE ${CMAKE_CURRENT_BINARY_DIR})
+
+
+
+#
 # 应用目标模板
 #
 add_executable(app app.cpp)
 
-target_link_libraries(app PUBLIC Lib Boost::program_options)
+target_link_libraries(app PUBLIC Lib Boost::program_options timestamp)
