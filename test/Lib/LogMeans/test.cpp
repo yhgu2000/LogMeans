@@ -18,11 +18,13 @@ BOOST_AUTO_TEST_CASE(case0)
   data.setRandom(10, 100);
 
   Catalog cata;
-  int k;
-  DataSet::value_type mse;
-  logMeans(data, &cata, &k, &mse);
+  MseHistory mseHist;
+  std::size_t ansIndex;
+  logMeans(data, &cata, &mseHist, &ansIndex);
 
-  BOOST_TEST_MESSAGE("k = " << k << "\nmse = " << mse);
+  BOOST_TEST_MESSAGE("k = " << mseHist[ansIndex].first
+                            << "\nmse = " << mseHist[ansIndex].second);
+  BOOST_TEST_MESSAGE(mseHist.to_json());
 }
 
 BOOST_AUTO_TEST_SUITE_END()
