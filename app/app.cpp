@@ -1,4 +1,6 @@
 #include "project.h"
+#include "timestamp.h"
+
 #include <Lib/hpp>
 #include <boost/program_options.hpp>
 #include <fstream>
@@ -170,7 +172,8 @@ struct SubCmdFunc
 
 const SubCmdFunc kSubCmdFuncs[] = {
   { "kmeans", "manual K-Means cluster", &kmeans },
-  // TODO
+  { "elbow", "Elbow algorithm", &elbow },
+  { "logmeans", "Log Means algorithm", &logmeans },
 };
 
 int
@@ -206,12 +209,13 @@ try {
   po::notify(vmap);
 
   if (vmap.count("version")) {
-    std::cout << "Command-Line App"
-                 "\n"
-                 "\nBuilt: " __TIME__ " (" __DATE__ ")"
-                 "\nProject: " LogMeans_VERSION "\n"
-                 "\nCopyright (C) 2023 Yuhao Gu. All Rights Reserved."
-              << std::endl;
+    std::cout
+      << "Command-Line App"
+         "\n"
+         "\nBuilt: " LogMeans_TIMESTAMP
+         "\nProject: " LogMeans_VERSION "\n"
+         "\nCopyright (C) 2023 Yuhao Gu and Tong Duan. All Rights Reserved."
+      << std::endl;
     return 0;
   }
 
