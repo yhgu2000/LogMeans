@@ -1,4 +1,13 @@
 #
+# 时间戳生成 CMake 脚本
+#
+configure_file(timestamp.cmake.in
+  ${CMAKE_CURRENT_BINARY_DIR}/timestamp.cmake @ONLY
+)
+
+
+
+#
 # 就地导出使用方式
 #
 configure_file(ExportConfig.cmake.in ${CMAKE_PROJECT_NAME}Config.cmake)
