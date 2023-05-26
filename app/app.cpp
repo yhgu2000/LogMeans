@@ -153,15 +153,73 @@ kmeans(int argc, char* argv[])
 }
 
 int
+elbow_or_logmeans(int argc, char* argv[], bool which)
+{
+  po::options_description od("Algorithm Options");
+  od.add_options()                                             //
+    ("help,h", "print help info")                              //
+    ("input,i", po::value<std::string>(), "input json path")   //
+    ("output,o", po::value<std::string>(), "output json path") //
+    ;
+
+  po::positional_options_description pod;
+  pod.add("input", 1);
+  pod.add("output", 1);
+
+  po::variables_map vmap;
+  po::store(
+    po::command_line_parser(argc, argv).options(od).positional(pod).run(),
+    vmap);
+  po::notify(vmap);
+
+  if (vmap.count("help") || argc == 1) {
+    std::cout << od << kFormatHelp << std::endl;
+    return 0;
+  }
+
+  auto input = vmap["input"].as<std::string>();
+  auto output = vmap["output"].as<std::string>();
+
+  DataSet ds;
+  std::string cataOut;
+  parse_input(input.c_str(), &ds, &cataOut);
+
+  Catalog cata;
+  MseHistory mseHist;
+  std::size_t ansIndex;
+  Profiler prof;
+
+  if (which) {
+    Elbow elbow;
+    elbow(ds, &cata, &mseHist, &ansIndex);
+    prof = elbow;
+  } else {
+    LogMeans logmeans;
+    logmeans(ds, &cata, &mseHist, &ansIndex);
+    prof = logmeans;
+  }
+
+  generate_output(output.c_str(),
+                  cata,
+                  cataOut,
+                  mseHist[ansIndex].first,
+                  mseHist[ansIndex].second,
+                  mseHist,
+                  prof);
+
+  return 0;
+}
+
+int
 elbow(int argc, char* argv[])
 {
-  abort();
+  return elbow_or_logmeans(argc, argv, true);
 }
 
 int
 logmeans(int argc, char* argv[])
 {
-  abort();
+  return elbow_or_logmeans(argc, argv, false);
 }
 
 struct SubCmdFunc
@@ -212,8 +270,7 @@ try {
     std::cout
       << "Command-Line App"
          "\n"
-         "\nBuilt: " LogMeans_TIMESTAMP
-         "\nProject: " LogMeans_VERSION "\n"
+         "\nBuilt: " LogMeans_TIMESTAMP "\nProject: " LogMeans_VERSION "\n"
          "\nCopyright (C) 2023 Yuhao Gu and Tong Duan. All Rights Reserved."
       << std::endl;
     return 0;

@@ -7,6 +7,7 @@ namespace Lib {
 
 class Elbow : public Profiler
 {
+public:
   /**
    * @param[in] data 数据集
    * @param[out] cata 聚类结果
