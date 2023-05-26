@@ -1,5 +1,6 @@
 #include "KMeans.hpp"
-#include "DistinctRandom.cpp"
+#include <unordered_set>
+#include <random>
 #define INF 0x3f3f3f3f;
 
 namespace Lib {
@@ -30,16 +31,21 @@ KMeans::operator()(const DataSet& data,
 
   std::random_device rd;
   std::mt19937 gen(rd());
-  lib::distinct_uniform_int_distribution<> dis(0,data_nums-1);
+  std::uniform_int_distribution<> dis(0,data_nums-1);
 
   // 聚类中心点
   // 初始化：从数据中随机选k个
   Eigen::MatrixXd centers(k,dims);
-  for(int i =0;i<k;i++){
-      int idx = dis(gen);
-      centers.row(i) = data.row(idx);
+  std::unordered_set<int> idx_box;
+  int tmp_i = 0;
+  while(idx_box.size()<k){
+    int idx = dis(gen);
+    if(idx_box.find(idx)==idx_box.end()){
+      idx_box.insert(idx);
+      centers.row(tmp_i++) = data.row(idx);
+    }
   }
-
+  
   // 迭代
   Eigen::VectorXi new_labels(data_nums);
   int step = 0;
