@@ -105,6 +105,9 @@ generate_output(const char* path,
   obj["mse"] = mse;
   obj["msehist"] = mseHist.to_json();
   obj["prof"] = prof.to_json();
+
+  std::ofstream fout(path, std::ios::binary);
+  fout << obj << std::endl;
 }
 
 int
@@ -222,6 +225,39 @@ logmeans(int argc, char* argv[])
   return elbow_or_logmeans(argc, argv, false);
 }
 
+int
+example_1(int argc, char* argv[])
+{
+  std::cout << R"({
+  "dataset": {
+    "rows": 3,
+    "cols": 5,
+    "data": [
+      1, 2, 3, 4, 5,
+      6, 7, 8, 9, 10,
+      11, 12, 13, 14, 15,
+    ]
+  },
+  "cata": "cata.matx",
+})" << std::endl;
+  return 0;
+}
+
+int
+example_2(int argc, char* argv[])
+{
+  std::cout << R"({
+  "dataset": "data.matx",
+})" << std::endl;
+
+  DataSet ds;
+  ds.setRandom(10, 100);
+
+  matx_dump_bin(ds, "data.matx");
+
+  return 0;
+}
+
 struct SubCmdFunc
 {
   const char *mName, *mInfo;
@@ -232,6 +268,8 @@ const SubCmdFunc kSubCmdFuncs[] = {
   { "kmeans", "manual K-Means cluster", &kmeans },
   { "elbow", "Elbow algorithm", &elbow },
   { "logmeans", "Log Means algorithm", &logmeans },
+  { "example-1", "print input example 1", &example_1 },
+  { "example-2", "print input example 2", &example_2 },
 };
 
 int

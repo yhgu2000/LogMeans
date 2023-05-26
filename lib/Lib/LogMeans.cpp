@@ -1,6 +1,7 @@
 #include "LogMeans.hpp"
 
 #include <cassert>
+#include <map>
 #include <tuple>
 #include <vector>
 
@@ -143,20 +144,30 @@ LogMeans::operator()(const DataSet& data,
   mseHist->clear();
 
   HeapEntry ent = { 1, int(data.cols()) };
+  std::map<int, DataSet::value_type> cache;
 
   mKMeans(data, ent.mL, cata, &ent.mLmse);
   mseHist->emplace_back(ent.mL, ent.mLmse);
+  cache.emplace(ent.mL, ent.mLmse);
 
   mKMeans(data, ent.mR, cata, &ent.mRmse);
   mseHist->emplace_back(ent.mR, ent.mRmse);
+  cache.emplace(ent.mR, ent.mRmse);
 
   Heap heap;
   while (ent.mR - ent.mL > 1) {
     auto mid = (ent.mL + ent.mR) / 2;
     DataSet::value_type midMse;
 
-    mKMeans(data, mid, cata, &midMse);
-    mseHist->emplace_back(mid, midMse);
+    auto it = cache.find(mid);
+    if (it != cache.end())
+      midMse = it->second;
+
+    else {
+      mKMeans(data, mid, cata, &midMse);
+      mseHist->emplace_back(mid, midMse);
+      cache.emplace_hint(it, mid, midMse);
+    }
 
     heap.heap_push({ ent.mL, mid, ent.mLmse, midMse });
     heap.heap_push({ mid, ent.mR, midMse, ent.mRmse });
