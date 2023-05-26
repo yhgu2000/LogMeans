@@ -26,12 +26,12 @@ public:
                   std::size_t* ansIndex);
 
   /**
-   * @brief 改良版算法
+   * @brief 二分查找版
    */
-  void modified(const DataSet& data,
-                Catalog* cata,
-                MseHistory* mseHist,
-                std::size_t* ansIndex);
+  void binary_search(const DataSet& data,
+                     Catalog* cata,
+                     MseHistory* mseHist,
+                     std::size_t* ansIndex);
 
 private:
   KMeans mKMeans;
