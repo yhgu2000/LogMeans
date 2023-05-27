@@ -2,6 +2,7 @@
 
 #include "Profiler.hpp"
 #include "lib.hpp"
+#include "KMeans.hpp"
 
 namespace Lib {
 
@@ -18,6 +19,10 @@ public:
                   Catalog* cata,
                   MseHistory* mseHist,
                   std::size_t* ansIndex);
+
+private:
+  KMeans mKMeans;
+
 };
 
 } // namespace Lib
