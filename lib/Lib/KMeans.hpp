@@ -22,6 +22,8 @@ public:
    * @param[out] cata 聚类结果
    * @param[out] mse 误差
    */
+  DataSet::value_type error; //迭代过程的mse
+  DataSet::value_type eps = 1e-6;   //收敛阈值
   void operator()(const DataSet& data,
                   int k,
                   Catalog* cata,
