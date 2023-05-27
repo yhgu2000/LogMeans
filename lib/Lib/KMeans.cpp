@@ -49,6 +49,8 @@ KMeans::operator()(const DataSet& data,
   // 迭代
   Eigen::VectorXi new_labels(data_nums);
 
+  int step = 0;
+
   while(true){
       // 分类
       // 对数据集中每个点，找到最近的k_idx
@@ -94,6 +96,8 @@ KMeans::operator()(const DataSet& data,
           break;
       }
       centers = new_centers;
+      step++;
+      std::cout<<"step="<<step<<" mse="<<error<<"\n";
   }
   *cata = new_labels;
   *mse = error;
