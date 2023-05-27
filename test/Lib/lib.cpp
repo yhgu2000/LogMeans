@@ -32,6 +32,7 @@ BOOST_AUTO_TEST_CASE(DataSet_io_bin)
 }
 
 BOOST_AUTO_TEST_CASE(Catalog_io_json)
+
   Catalog ct(7);
   for (auto *p = ct.data(), *end = ct.data() + ct.size(); p != end; ++p)
     *p = genrand::range<int>();
