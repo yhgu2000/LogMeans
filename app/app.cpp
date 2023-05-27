@@ -147,7 +147,17 @@ kmeans(int argc, char* argv[])
 
   Catalog cata;
   DataSet::value_type mse;
-  KMeans algo;
+
+  class Algo : public KMeans
+  {
+    void report(Entry& entry) noexcept override
+    {
+      std::cout << (entry.mTime - initial()) << " " << entry.mTag;
+      if (entry.mInfo)
+        std::cout << " " << entry.mInfo;
+      std::cout << '\n';
+    }
+  } algo;
   algo(ds, k, &cata, &mse);
 
   generate_output(output.c_str(), cata, cataOut, k, mse, MseHistory(), algo);

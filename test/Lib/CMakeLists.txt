@@ -28,3 +28,14 @@ target_link_libraries(test_LogMeans PRIVATE test_util
 )
 
 target_compile_definitions(test_LogMeans PRIVATE BOOST_TEST_MODULE=LogMeans)
+
+
+
+#
+# 测试 KMeans 实现
+#
+add_executable(test_KMeans KMeans.cpp)
+
+target_link_libraries(test_KMeans PRIVATE test_util Lib)
+
+target_compile_definitions(test_KMeans PRIVATE BOOST_TEST_MODULE=KMeans)
