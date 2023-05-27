@@ -20,11 +20,16 @@ BOOST_AUTO_TEST_CASE(case0)
   Catalog cata;
   MseHistory mseHist;
   std::size_t ansIndex;
-  logMeans(data, &cata, &mseHist, &ansIndex);
 
-  BOOST_TEST_MESSAGE("k = " << mseHist[ansIndex].first
-                            << "\nmse = " << mseHist[ansIndex].second);
+  logMeans(data, &cata, &mseHist, &ansIndex);
   BOOST_TEST_MESSAGE(mseHist.to_json());
+  BOOST_TEST_MESSAGE("k = " << mseHist[ansIndex].first
+                            << "\nmse = " << mseHist[ansIndex].second << "\n");
+
+  logMeans.binary_search(data, &cata, &mseHist, &ansIndex);
+  BOOST_TEST_MESSAGE(mseHist.to_json());
+  BOOST_TEST_MESSAGE("k = " << mseHist[ansIndex].first
+                            << "\nmse = " << mseHist[ansIndex].second << "\n");
 }
 
 BOOST_AUTO_TEST_SUITE_END()

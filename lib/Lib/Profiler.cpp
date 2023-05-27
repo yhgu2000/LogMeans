@@ -85,8 +85,13 @@ Profiler::from_json(const bj::value& json,
     else
       info = new StrInfo(ent.at(2).as_string().c_str());
 
-    prof.mHead->mNext =
-      new Entry(time, tag, info, bool(info), prof.mHead->mNext);
+    prof.mHead->mNext.store(
+      new Entry(time,
+                tag,
+                info,
+                bool(info),
+                prof.mHead->mNext.load(std::memory_order_relaxed)),
+      std::memory_order_relaxed);
   }
 
   return prof;
