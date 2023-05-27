@@ -8,6 +8,14 @@ namespace Lib {
 class KMeans : public Profiler
 {
 public:
+  KMeans() = default;
+
+  KMeans(const Profiler& prof)
+    : Profiler(prof)
+  {
+  }
+
+public:
   /**
    * @param[in] data 数据集
    * @param[in] k 聚类数

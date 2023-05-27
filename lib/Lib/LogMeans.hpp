@@ -10,7 +10,7 @@ class LogMeans : public Profiler
 {
 public:
   LogMeans()
-    : mKMeans{ *this }
+    : mKMeans(*this)
   {
   }
 

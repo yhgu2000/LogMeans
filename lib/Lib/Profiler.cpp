@@ -4,26 +4,6 @@
 #include <ostream>
 #include <vector>
 
-namespace sc = std::chrono;
-
-template<typename T1, typename T2>
-static std::ostream&
-operator<<(std::ostream& out, const sc::duration<T1, T2>& dura)
-{
-  auto count = sc::duration_cast<sc::nanoseconds>(dura).count();
-
-  if (count < 10000)
-    out << count << "ns";
-  else if ((count /= 1000) < 10000)
-    out << count << "us";
-  else if ((count /= 1000) < 10000)
-    out << count << "ms";
-  else
-    out << count / 1000 << "s";
-
-  return out;
-}
-
 std::ostream&
 operator<<(std::ostream& out, const Lib::Profiler& prof)
 {
@@ -108,6 +88,8 @@ Profiler::time(const char* tag, Info* info, bool owned) noexcept
     entry->mNext.store(next, std::memory_order_relaxed);
   } while (!mHead->mNext.compare_exchange_weak(
     next, entry, std::memory_order_relaxed));
+
+  report(*entry);
   return *entry;
 }
 
@@ -158,6 +140,11 @@ std::string
 Profiler::Scope::LeaveInfo::info() noexcept
 {
   return "LEAVE";
+}
+
+void
+Profiler::report(Entry& entry) noexcept
+{
 }
 
 } // namespace Lib

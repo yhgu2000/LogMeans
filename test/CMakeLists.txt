@@ -12,9 +12,6 @@ if(NOT Boost_UNIT_TEST_FRAMEWORK_FOUND)
   return()
 endif()
 
-# 用于构建时的“文件级多态”
-include(override_glob)
-
 
 
 #
@@ -38,10 +35,3 @@ add_executable(test_test test.cpp)
 target_link_libraries(test_test PRIVATE test_util)
 
 target_compile_definitions(test_test PRIVATE BOOST_TEST_MODULE=Test)
-
-
-
-#
-# Lib 模块
-#
-add_subdirectory(Lib)
