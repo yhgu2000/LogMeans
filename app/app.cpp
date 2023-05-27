@@ -156,7 +156,7 @@ kmeans(int argc, char* argv[])
 }
 
 int
-elbow_or_logmeans(int argc, char* argv[], bool which)
+algo_run(int argc, char* argv[], int which)
 {
   po::options_description od("Algorithm Options");
   od.add_options()                                             //
@@ -192,14 +192,24 @@ elbow_or_logmeans(int argc, char* argv[], bool which)
   std::size_t ansIndex;
   Profiler prof;
 
-  if (which) {
-    Elbow elbow;
-    elbow(ds, &cata, &mseHist, &ansIndex);
-    prof = elbow;
-  } else {
-    LogMeans logmeans;
-    logmeans(ds, &cata, &mseHist, &ansIndex);
-    prof = logmeans;
+  switch (which) {
+    case 0: {
+      Elbow elbow;
+      elbow(ds, &cata, &mseHist, &ansIndex);
+      prof = elbow;
+    } break;
+
+    case 1: {
+      LogMeans logmeans;
+      logmeans(ds, &cata, &mseHist, &ansIndex);
+      prof = logmeans;
+    } break;
+
+    case 2: {
+      LogMeans logmeans;
+      logmeans.binary_search(ds, &cata, &mseHist, &ansIndex);
+      prof = logmeans;
+    } break;
   }
 
   generate_output(output.c_str(),
@@ -216,13 +226,19 @@ elbow_or_logmeans(int argc, char* argv[], bool which)
 int
 elbow(int argc, char* argv[])
 {
-  return elbow_or_logmeans(argc, argv, true);
+  return algo_run(argc, argv, 0);
 }
 
 int
 logmeans(int argc, char* argv[])
 {
-  return elbow_or_logmeans(argc, argv, false);
+  return algo_run(argc, argv, 1);
+}
+
+int
+logmeans_m(int argc, char* argv[])
+{
+  return algo_run(argc, argv, 2);
 }
 
 int
@@ -268,6 +284,7 @@ const SubCmdFunc kSubCmdFuncs[] = {
   { "kmeans", "manual K-Means cluster", &kmeans },
   { "elbow", "Elbow algorithm", &elbow },
   { "logmeans", "Log Means algorithm", &logmeans },
+  { "logmeans-m", "Log Means algorithm (modified)", &logmeans_m },
   { "example-1", "print input example 1", &example_1 },
   { "example-2", "print input example 2", &example_2 },
 };
