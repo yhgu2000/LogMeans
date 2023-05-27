@@ -26,8 +26,8 @@ KMeans::operator()(const DataSet& data,
   }
 
   // TODO
-  int data_nums = data.rows();
-  int dims = data.cols();
+  int dims = data.rows();
+  int data_nums = data.cols();
 
   std::random_device rd;
   std::mt19937 gen(rd());
@@ -35,20 +35,19 @@ KMeans::operator()(const DataSet& data,
 
   // 聚类中心点
   // 初始化：从数据中随机选k个
-  Eigen::MatrixXd centers(k,dims);
+  Eigen::MatrixXd centers(dims,k);
   std::unordered_set<int> idx_box;
   int tmp_i = 0;
   while(idx_box.size()<k){
     int idx = dis(gen);
     if(idx_box.find(idx)==idx_box.end()){
       idx_box.insert(idx);
-      centers.row(tmp_i++) = data.row(idx);
+      centers.col(tmp_i++) = data.col(idx);
     }
   }
   
   // 迭代
   Eigen::VectorXi new_labels(data_nums);
-  int step = 0;
 
   while(true){
       // 分类
@@ -57,7 +56,7 @@ KMeans::operator()(const DataSet& data,
           double min_dist = 1e10;
           int min_idx = -1;
           for(int j =0;j<k;j++){
-              double dist = (data.row(i)-centers.row(j)).norm();
+              double dist = (data.col(i)-centers.col(j)).norm();
               if(dist<min_dist){
                   min_dist = dist;
                   min_idx = j;
@@ -68,32 +67,32 @@ KMeans::operator()(const DataSet& data,
 
       // 更新聚类中心
       // 每轮更新的k个中心点
-      Eigen::MatrixXd new_centers(k,dims);
+      Eigen::MatrixXd new_centers(dims,k);
 
       // 每轮隶属某个中心点的点数量
       Eigen::VectorXi k_count(k);
 
       k_count.setZero();
+      new_centers.setZero();
       for(int i=0;i<data_nums;i++){
-          new_centers.row(new_labels(i))+=data.row(i);
+          int tmp = new_labels(i);
+          new_centers.col(tmp)+=data.col(i);
           k_count(new_labels(i))++;
-      }                
+      }               
       for(int i =0;i<k;i++){
           if(k_count(i)==0){
               // 应对离群中心点，重新随机生成
               int idx = dis(gen);
-              new_centers.row(i)=data.row(idx);
+              new_centers.col(i)=data.col(idx);
           }else{
-              new_centers.row(i)/=k_count(i);
+              new_centers.col(i)/=k_count(i);
           }
       }
-
       // 收敛条件
       error = (new_centers - centers).norm();
       if(error<eps){
           break;
       }
-      step++;
       centers = new_centers;
   }
   *cata = new_labels;
