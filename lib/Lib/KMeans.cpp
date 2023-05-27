@@ -54,10 +54,10 @@ KMeans::operator()(const DataSet& data,
       // 分类
       // 对数据集中每个点，找到最近的k_idx
       for(int i=0;i<data_nums;i++){
-          float min_dist = INF;
+          double min_dist = 1e10;
           int min_idx = -1;
           for(int j =0;j<k;j++){
-              float dist = (data.row(i)-centers.row(j)).norm();
+              double dist = (data.row(i)-centers.row(j)).norm();
               if(dist<min_dist){
                   min_dist = dist;
                   min_idx = j;
@@ -67,21 +67,24 @@ KMeans::operator()(const DataSet& data,
       }
 
       // 更新聚类中心
+      // 每轮更新的k个中心点
       Eigen::MatrixXd new_centers(k,dims);
-      Eigen::VectorXi count(k);
 
-      count.setZero();
+      // 每轮隶属某个中心点的点数量
+      Eigen::VectorXi k_count(k);
+
+      k_count.setZero();
       for(int i=0;i<data_nums;i++){
           new_centers.row(new_labels(i))+=data.row(i);
-          count(new_labels(i))++;
+          k_count(new_labels(i))++;
       }                
       for(int i =0;i<k;i++){
-          if(count(i)==0){
+          if(k_count(i)==0){
               // 应对离群中心点，重新随机生成
               int idx = dis(gen);
               new_centers.row(i)=data.row(idx);
           }else{
-              new_centers.row(i)/=count(i);
+              new_centers.row(i)/=k_count(i);
           }
       }
 
