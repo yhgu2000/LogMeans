@@ -34,7 +34,8 @@ Elbow::operator()(const DataSet& data,
   }
   std::cout<<"elbow_k is"<<elbow_k<<"\n";
   *cata = tmp_cata;
-  *ansIndex = elbow_k;
+  // 最大mse_rate对应k的"索引"
+  *ansIndex = elbow_k-2;
 
   /**
    * xxxIndex 变量里存的是 mseHist 中项的索引，
