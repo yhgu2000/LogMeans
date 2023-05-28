@@ -34,7 +34,7 @@ Elbow::operator()(const DataSet& data,
   }
   std::cout<<"elbow_k is"<<elbow_k<<"\n";
   *cata = tmp_cata;
-  // 应该是返回mse_rate最大的k的“索引”
+  // 最大mse_rate对应k的"索引"
   *ansIndex = elbow_k-2;
 
   /**
