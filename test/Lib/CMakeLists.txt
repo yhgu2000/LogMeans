@@ -12,19 +12,15 @@ target_compile_definitions(test_lib PRIVATE BOOST_TEST_MODULE=lib)
 #
 # 测试 LogMeans 实现
 #
-override_glob(Lib_src
-  ${CMAKE_SOURCE_DIR}/lib/Lib ${CMAKE_CURRENT_SOURCE_DIR}/LogMeans/Lib
-  EXPRESSIONS *
-)
+add_subdirectory(LogMeans)
 
-add_executable(test_LogMeans LogMeans/test.cpp ${Lib_src})
 
-target_include_directories(test_LogMeans
-  PRIVATE ${CMAKE_SOURCE_DIR}/lib LogMeans
-)
 
-target_link_libraries(test_LogMeans PRIVATE test_util
-  Eigen3::Eigen Boost::json OpenMP::OpenMP_CXX
-)
+#
+# 测试 KMeans 实现
+#
+add_executable(test_KMeans KMeans.cpp)
 
-target_compile_definitions(test_LogMeans PRIVATE BOOST_TEST_MODULE=LogMeans)
+target_link_libraries(test_KMeans PRIVATE test_util Lib)
+
+target_compile_definitions(test_KMeans PRIVATE BOOST_TEST_MODULE=KMeans)

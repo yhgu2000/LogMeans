@@ -78,6 +78,8 @@ public:
                             std::set<std::string>& tags) noexcept(false);
 
 public:
+  virtual ~Profiler() = default;
+
   /**
    * @brief 构造函数，构造时刻为初始计时点。
    */
@@ -126,6 +128,14 @@ public:
   Iterator begin() const noexcept;
   Iterator end() const noexcept;
   ///@}
+
+protected:
+  /**
+   * @brief 在子类中重载这个方法以监视计时。
+   *
+   * @param ent 本次计时构造的记录条目。
+   */
+  virtual void report(Entry& entry) noexcept;
 
 private:
   std::shared_ptr<Entry> mHead;
@@ -254,6 +264,26 @@ private:
   Profiler& _;
   const char* mTag;
 };
+
+namespace sc = std::chrono;
+
+template<typename T1, typename T2>
+static std::ostream&
+operator<<(std::ostream& out, const sc::duration<T1, T2>& dura)
+{
+  auto count = sc::duration_cast<sc::nanoseconds>(dura).count();
+
+  if (count < 10000)
+    out << count << "ns";
+  else if ((count /= 1000) < 10000)
+    out << count << "us";
+  else if ((count /= 1000) < 10000)
+    out << count << "ms";
+  else
+    out << count / 1000 << "s";
+
+  return out;
+}
 
 } // namespace Lib
 
