@@ -17,17 +17,15 @@ override_glob(Lib_src
   EXPRESSIONS *
 )
 
-add_executable(test_LogMeans LogMeans/test.cpp ${Lib_src})
 
-target_include_directories(test_LogMeans
-  PRIVATE ${CMAKE_SOURCE_DIR}/lib LogMeans
-)
+#
+# 测试 KMeans 实现
+#
+add_executable(test_KMeans KMeans.cpp)
 
-target_link_libraries(test_LogMeans PRIVATE test_util
-  Eigen3::Eigen Boost::json OpenMP::OpenMP_CXX
-)
+target_link_libraries(test_KMeans PRIVATE test_util Lib)
 
-target_compile_definitions(test_LogMeans PRIVATE BOOST_TEST_MODULE=LogMeans)
+target_compile_definitions(test_KMeans PRIVATE BOOST_TEST_MODULE=KMeans)
 
 
 
