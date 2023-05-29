@@ -80,7 +80,7 @@ Profiler::from_json(const bj::value& json,
 Profiler::Entry&
 Profiler::time(const char* tag, Info* info, bool owned) noexcept
 {
-  assert(info || !owned); // owned 无效时 info 必须为空
+  assert(info || !owned); // info为空时，owned必须为false
 
   auto* entry = new Entry(Clock::now(), tag, info, owned, nullptr);
   auto* next = mHead->mNext.load(std::memory_order_relaxed);
