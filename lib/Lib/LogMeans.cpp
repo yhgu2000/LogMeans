@@ -159,7 +159,6 @@ LogMeans::operator()(const DataSet& data,
    * mseHist 中保存的是聚类数 k 到 mse 的映射。
    */
 
-  std::cout << minK << " " << maxK << std::endl;
   std::size_t lftIndex = 0;
   cache.emplace(minK, 0);
   {

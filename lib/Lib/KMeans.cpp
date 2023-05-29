@@ -28,14 +28,12 @@ KMeans::operator()(const DataSet& data,
                                              (i + 1) * dataNums / k - 1)(sRand);
     centers.col(i) = data.col(x);
   }
+  time("KMeans-init");
 
   auto& labels = *cata;
   labels.resize(dataNums);
-  time("KMeans-init");
-
-  DataSet centersNew(dims, k); // 每轮更新的k个中心点
-  Eigen::VectorXi kcount(k);   // 每轮隶属某个中心点的点数量
-
+  Eigen::VectorXi kcount(k); // 每轮隶属某个中心点的点数量
+  DataSet::value_type mseLast = 1e-9;
   for (int step = 0;; step++) {
     // 分类，对数据集中每个点，找到最近的k_idx
     DataSet::value_type sse = 0;
@@ -55,29 +53,28 @@ KMeans::operator()(const DataSet& data,
     *mse = sse / dataNums;
 
     // 更新聚类中心
+    centers.setZero();
     kcount.setZero();
-    centersNew.setZero();
 #pragma omp parallel for
     for (int i = 0; i < dataNums; ++i) {
       int tmp = labels(i);
-      centersNew.col(tmp) += data.col(i);
+      centers.col(tmp) += data.col(i);
       ++kcount(tmp);
     }
     for (int i = 0; i < k; ++i) {
       if (kcount(i) == 0) {
         // 应对离群中心点，重新随机生成
         int idx = std::uniform_int_distribution<>(0, dataNums - 1)(sRand);
-        centersNew.col(i) = data.col(idx);
+        centers.col(i) = data.col(idx);
       } else {
-        centersNew.col(i) /= kcount(i);
+        centers.col(i) /= kcount(i);
       }
     }
 
     // 收敛条件
-    auto delta = (centersNew - centers).norm();
-    std::swap(centers, centersNew);
-    if (delta < eps)
+    if (std::abs((*mse - mseLast) / mseLast) < mEpsRatio)
       break;
+    mseLast = (mseLast + *mse) / 2; // 平滑
 
     struct IterInfo : public Profiler::Info
     {
