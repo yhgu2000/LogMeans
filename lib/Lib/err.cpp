@@ -15,7 +15,10 @@ Errno::info() const noexcept
   msg.resize(msg.find('\0'));
   return msg;
 #else
-  return // TODO
+  std::string msg(64, '\0');
+  strerror_r(_code, msg.data(), msg.size());
+  msg.resize(msg.find('\0'));
+  return msg;
 #endif
 }
 

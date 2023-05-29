@@ -9,7 +9,7 @@
 add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/timestamp.h
   COMMAND ${CMAKE_COMMAND} -P ${CMAKE_BINARY_DIR}/cmake/timestamp.cmake
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-  DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/timestamp
+  DEPENDS ${CMAKE_BINARY_DIR}/cmake/timestamp.cmake
 )
 
 add_library(timestamp INTERFACE ${CMAKE_CURRENT_BINARY_DIR}/timestamp.h)
