@@ -1,7 +1,7 @@
 #include "Profiler.hpp"
 #include <boost/json.hpp>
 #include <cassert>
-#include <ostream>
+#include <iostream>
 #include <vector>
 
 std::ostream&
@@ -80,7 +80,7 @@ Profiler::from_json(const bj::value& json,
 Profiler::Entry&
 Profiler::time(const char* tag, Info* info, bool owned) noexcept
 {
-  assert(info || !owned); // owned 无效时 info 必须为空
+  assert(info || !owned); // info为空时，owned必须为false
 
   auto* entry = new Entry(Clock::now(), tag, info, owned, nullptr);
   auto* next = mHead->mNext.load(std::memory_order_relaxed);
@@ -105,6 +105,7 @@ Profiler::to_json() const noexcept(false)
     ent.emplace_back(dura.count());
     if (i.mInfo)
       ent.emplace_back(i.mInfo->info());
+    arr.emplace_back(std::move(ent));
   }
 
   return arr;
