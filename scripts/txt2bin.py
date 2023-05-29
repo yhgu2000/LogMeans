@@ -1,8 +1,8 @@
 import struct
 from sys import argv
 
-if len(argv) != 3:
-    print("Arguments: <input_txt_file> <output_bin_file>")
+if len(argv) < 3:
+    print("Arguments: <input_txt_file> <output_bin_file> [float]")
     exit(1)
 
 a = 0  # 记录文件的行数
@@ -23,9 +23,14 @@ with open(filename, "r") as f:
         if b == 0:
             b = len(line_list)
 
-# 将行数、列数和一维数组转换为二进制数据
-header = struct.pack("<ii", b, a)  # 将行数和列数打包为8字节的二进制数据
-data_bytes = struct.pack("<{}d".format(a * b), *data_list)  # 将一维数组打包为二进制数据
+# 将行数和列数打包为8字节的二进制数据
+header = struct.pack("<ii", b, a)
+
+# 将一维数组打包为二进制数据
+if len(argv) > 3 and argv[3] == "float":
+    data_bytes = struct.pack("<{}f".format(a * b), *data_list)
+else:
+    data_bytes = struct.pack("<{}d".format(a * b), *data_list)
 
 # 将二进制数据写入文件
 with open(binname, "wb") as f:

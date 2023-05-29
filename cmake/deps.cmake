@@ -25,6 +25,13 @@ if (NOT Boost_USE_STATIC_LIBS)
   target_link_libraries(Boost::json INTERFACE Boost::dynamic_linking)
 endif()
 
+# 使能 SIMD 指令集
+if (MSVC)
+  add_compile_options("/arch:AVX2")
+else()
+  add_compile_options("-march=native")
+endif()
+
 
 
 # Eigen
