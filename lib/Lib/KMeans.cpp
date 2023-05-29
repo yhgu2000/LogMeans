@@ -7,7 +7,6 @@
 
 using namespace std::string_literals;
 
-
 namespace Lib {
 
 void
@@ -107,6 +106,7 @@ KMeans::operator()(const DataSet& data,
     }* info = new IterInfo(step, sse);
     time("iter", info, true);
   }
+
   *cata = new_labels;
   *mse = sse;
 };

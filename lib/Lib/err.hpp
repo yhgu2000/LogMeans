@@ -142,6 +142,6 @@ public:
   ///@}
 };
 
-}
+} // namespace err
 
-}
+} // namespace Lib

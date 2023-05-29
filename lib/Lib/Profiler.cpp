@@ -1,7 +1,7 @@
 #include "Profiler.hpp"
 #include <boost/json.hpp>
 #include <cassert>
-#include <ostream>
+#include <iostream>
 #include <vector>
 
 std::ostream&
@@ -105,6 +105,7 @@ Profiler::to_json() const noexcept(false)
     ent.emplace_back(dura.count());
     if (i.mInfo)
       ent.emplace_back(i.mInfo->info());
+    arr.emplace_back(std::move(ent));
   }
 
   return arr;

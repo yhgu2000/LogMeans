@@ -29,7 +29,3 @@ data_dict = {
 
 # 将字典转换为JSON字符串
 data_json = json.dumps(data_dict)
-
-# 将JSON字符串写入文件
-with open(jsonname, 'w') as f:
-    f.write(data_json)

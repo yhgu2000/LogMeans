@@ -13,7 +13,15 @@ namespace Lib {
 class KMeans : public Profiler
 {
 public:
+  DataSet::value_type eps{ 1e-6 }; ///< 收敛阈值
+
+public:
   KMeans() = default;
+
+  KMeans(DataSet::value_type eps)
+    : eps(eps)
+  {
+  }
 
   KMeans(const Profiler& prof)
     : Profiler(prof)
