@@ -7,7 +7,6 @@
 
 using namespace std::string_literals;
 
-
 namespace Lib {
 
 void
@@ -18,8 +17,7 @@ KMeans::operator()(const DataSet& data,
 {
   Scope scopeKMeans(*this, "KMeans");
 
-  DataSet::value_type error;      // 迭代过程的mse
-  DataSet::value_type eps = 1e-6; // 收敛阈值
+  DataSet::value_type error; // 迭代过程的mse
 
   int dims = data.rows();
   int data_nums = data.cols();
@@ -115,6 +113,7 @@ KMeans::operator()(const DataSet& data,
     }* info = new IterInfo(step, error);
     time("iter", info, true);
   }
+
   *cata = new_labels;
   *mse = error;
 };
