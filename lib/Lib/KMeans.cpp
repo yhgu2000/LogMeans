@@ -1,9 +1,6 @@
 #include "KMeans.hpp"
 #include <random>
 #include <string>
-#include <unordered_set>
-
-#define INF 0x3f3f3f3f;
 
 using namespace std::string_literals;
 
@@ -17,97 +14,85 @@ KMeans::operator()(const DataSet& data,
 {
   Scope scopeKMeans(*this, "KMeans");
 
-  DataSet::value_type error; // 迭代过程的mse
-
   int dims = data.rows();
-  int data_nums = data.cols();
+  int dataNums = data.cols();
+  std::default_random_engine gen{ std::random_device()() };
 
-  std::random_device rd;
-  std::mt19937 gen(rd());
-  std::uniform_int_distribution<> dis(0, data_nums - 1);
-
-  // 聚类中心点
   // 初始化：从数据中随机选k个
-  Eigen::MatrixXd centers(dims, k);
-  std::unordered_set<int> idx_box;
-  int tmp_i = 0;
-  while (idx_box.size() < k) {
-    int idx = dis(gen);
-    if (idx_box.find(idx) == idx_box.end()) {
-      idx_box.insert(idx);
-      centers.col(tmp_i++) = data.col(idx);
-    }
+  DataSet centers(dims, k);
+  {
+    for (int i = 0; i < k; ++i)
+      centers.col(i) = data.col(std::uniform_int_distribution<>(
+        i * dataNums / k, (i + 1) * dataNums / k)(gen));
   }
 
-  time("init");
+  auto& labels = *cata;
+  labels.resize(dataNums);
+  time("KMeans-init");
 
-  // 迭代
-  Eigen::VectorXi new_labels(data_nums);
+  DataSet centersNew(dims, k); // 每轮更新的k个中心点
+  Eigen::VectorXi kcount(k);   // 每轮隶属某个中心点的点数量
 
-  // 对数据集中每个点，找到最近的k_idx,并计算sse
-  sse = cal_sse(data_nums,k,data,&new_labels,centers);
-
-  int step = 0;
-
-  while (true) {
+  for (int step = 0;; step++) {
+    // 分类，对数据集中每个点，找到最近的k_idx
+    DataSet::value_type sse = 0;
+#pragma omp parallel for reduction(+ : sse)
+    for (int i = 0; i < dataNums; i++) {
+      DataSet::value_type minDist =
+        std::numeric_limits<DataSet::value_type>::max();
+      int minIdx = -1;
+      for (int j = 0; j < k; j++) {
+        DataSet::value_type dist = (data.col(i) - centers.col(j)).norm();
+        if (dist < minDist)
+          minDist = dist, minIdx = j;
+      }
+      labels(i) = minIdx;
+      sse += minDist;
+    }
+    *mse = sse / dataNums;
 
     // 更新聚类中心
-    // 每轮更新的k个中心点
-    Eigen::MatrixXd new_centers(dims, k);
-
-    // 每轮隶属某个中心点的点数量
-    Eigen::VectorXi k_count(k);
-
-    k_count.setZero();
-    new_centers.setZero();
-    for (int i = 0; i < data_nums; i++) {
-      int tmp = new_labels(i);
-      new_centers.col(tmp) += data.col(i);
-      k_count(new_labels(i))++;
+    kcount.setZero();
+    centersNew.setZero();
+    for (int i = 0; i < dataNums; ++i) {
+      int tmp = labels(i);
+      centersNew.col(tmp) += data.col(i);
+      ++kcount(tmp);
     }
-    for (int i = 0; i < k; i++) {
-      if (k_count(i) == 0) {
+    for (int i = 0; i < k; ++i) {
+      if (kcount(i) == 0) {
         // 应对离群中心点，重新随机生成
-        int idx = dis(gen);
-        new_centers.col(i) = data.col(idx);
+        int idx = std::uniform_int_distribution<>(0, dataNums)(gen);
+        centersNew.col(i) = data.col(idx);
       } else {
-        new_centers.col(i) /= k_count(i);
+        centersNew.col(i) /= kcount(i);
       }
     }
 
     // 收敛条件
-    error = (new_centers - centers).norm();
-    if (error < eps) {
+    auto delta = (centersNew - centers).norm();
+    std::swap(centers, centersNew);
+    if (delta < eps)
       break;
-    }
-
-    // 分类
-    // 对数据集中每个点，找到最近的k_idx
-    sse = cal_sse(data_nums,k,data,&new_labels,new_centers);
-
-    centers = new_centers;
-    step++;
 
     struct IterInfo : public Profiler::Info
     {
-      int step;
-      DataSet::value_type mse;
+      int mStep;
+      DataSet::value_type mMse;
 
       IterInfo(int step, DataSet::value_type mse)
-        : step(step)
-        , mse(mse)
+        : mStep(step)
+        , mMse(mse)
       {
       }
 
       std::string info() noexcept override
       {
-        return "step="s + std::to_string(step) + " mse=" + std::to_string(mse);
+        return "MSE["s + std::to_string(mStep) + "]=" + std::to_string(mMse);
       }
-    }* info = new IterInfo(step, sse);
-    time("iter", info, true);
+    }* info = new IterInfo(step, *mse);
+    time("KMeans-iter", info, true);
   }
-  *cata = new_labels;
-  *mse = sse;
 };
 
 } // namespace Lib
