@@ -115,7 +115,7 @@ public:
    */
   Entry& time(const char* tag,
               Info* info = nullptr,
-              bool owned = true) noexcept;
+              bool owned = false) noexcept;
 
   /**
    * @brief 导出到 JSON。
