@@ -17,8 +17,6 @@ KMeans::operator()(const DataSet& data,
 {
   Scope scopeKMeans(*this, "KMeans");
 
-  DataSet::value_type error; // 迭代过程的mse
-
   int dims = data.rows();
   int data_nums = data.cols();
 
@@ -44,23 +42,12 @@ KMeans::operator()(const DataSet& data,
   // 迭代
   Eigen::VectorXi new_labels(data_nums);
 
+  // 对数据集中每个点，找到最近的k_idx,并计算sse
+  sse = cal_sse(data_nums,k,data,&new_labels,centers);
+
   int step = 0;
 
   while (true) {
-    // 分类
-    // 对数据集中每个点，找到最近的k_idx
-    for (int i = 0; i < data_nums; i++) {
-      double min_dist = 1e10;
-      int min_idx = -1;
-      for (int j = 0; j < k; j++) {
-        double dist = (data.col(i) - centers.col(j)).norm();
-        if (dist < min_dist) {
-          min_dist = dist;
-          min_idx = j;
-        }
-      }
-      new_labels(i) = min_idx;
-    }
 
     // 更新聚类中心
     // 每轮更新的k个中心点
@@ -92,6 +79,10 @@ KMeans::operator()(const DataSet& data,
       break;
     }
 
+    // 分类
+    // 对数据集中每个点，找到最近的k_idx
+    sse = cal_sse(data_nums,k,data,&new_labels,new_centers);
+
     centers = new_centers;
     step++;
 
@@ -110,12 +101,11 @@ KMeans::operator()(const DataSet& data,
       {
         return "step="s + std::to_string(step) + " mse=" + std::to_string(mse);
       }
-    }* info = new IterInfo(step, error);
+    }* info = new IterInfo(step, sse);
     time("iter", info, true);
   }
-
   *cata = new_labels;
-  *mse = error;
+  *mse = sse;
 };
 
 } // namespace Lib
