@@ -22,5 +22,6 @@ Errno::info() const noexcept
 #endif
 }
 
-}
-}
+} // namespace err
+
+} // namespace Lib
