@@ -7,7 +7,6 @@
 
 using namespace std::string_literals;
 
-
 namespace Lib {
 
 void

@@ -11,8 +11,8 @@ _chsize_s(int, std::int64_t);
 
 #else
 
-extern int
-ftruncate(int, std::int64_t);
+extern "C" int
+ftruncate(int, std::int64_t) noexcept;
 
 #endif
 
@@ -64,30 +64,30 @@ public:
 public:
   std::FILE* operator+() const noexcept { return mPtr; }
 
-  template<typename T, typename = std::enable_if_t<std::is_pod_v<T>>>
-  CFile64& operator<<(const T& t) const noexcept(false)
+  template<typename T, typename = std::enable_if_t<std::is_trivial_v<T>>>
+  const CFile64& operator<<(const T& t) const noexcept(false)
   {
     write(&t, sizeof(T), 1);
     return *this;
   }
 
-  template<typename T, typename = std::enable_if_t<std::is_pod_v<T>>>
-  CFile64& operator>>(T& t) const noexcept(false)
+  template<typename T, typename = std::enable_if_t<std::is_trivial_v<T>>>
+  const CFile64& operator>>(T& t) const noexcept(false)
   {
     read(&t, sizeof(T), 1);
     return *this;
   }
 
-  template<typename T, typename = std::enable_if_t<std::is_pod_v<T>>>
-  CFile64& operator<<(const std::vector<T>& vec) const noexcept(false)
+  template<typename T, typename = std::enable_if_t<std::is_trivial_v<T>>>
+  const CFile64& operator<<(const std::vector<T>& vec) const noexcept(false)
   {
     *this << vec.size();
     write(vec.data(), sizeof(T), vec.size());
     return *this;
   }
 
-  template<typename T, typename = std::enable_if_t<std::is_pod_v<T>>>
-  CFile64& operator>>(std::vector<T>& vec) const noexcept(false)
+  template<typename T, typename = std::enable_if_t<std::is_trivial_v<T>>>
+  const CFile64& operator>>(std::vector<T>& vec) const noexcept(false)
   {
     std::size_t size;
     *this >> size;
@@ -151,10 +151,8 @@ public:
     if (
 #ifdef _WIN32
       _fseeki64(mPtr, offset, origin)
-#elif sizeof(long) == 8
-      std::fseek(mPtr, offset, origin)
 #else
-#error "unspported"
+      assert(sizeof(long) == 8); std::fseek(mPtr, offset, origin)
 #endif
     )
       throw err::Errno(std::ferror(mPtr));
@@ -164,10 +162,9 @@ public:
   {
 #ifdef _WIN32
     auto ret = _ftelli64(mPtr);
-#elif sizeof(long) == 8
-    auto ret = std::ftell(mPtr);
 #else
-#error "unspported"
+    assert(sizeof(long) == 8);
+    auto ret = std::ftell(mPtr);
 #endif
     if (ret == -1)
       throw err::Errno(errno);
@@ -184,11 +181,10 @@ public:
 #ifdef _WIN32
     if (auto err = _chsize_s(fileno(mPtr), size))
       throw err::Errno(err);
-#elif sizeof(long) == 8
+#else
+    assert(sizeof(long) == 8);
     if (auto err = ftruncate(fileno(mPtr), size))
       throw err::Errno(err);
-#else
-#error "unspported"
 #endif
   }
 };
@@ -262,7 +258,7 @@ operator<<(const CFile64& f, const std::vector<T>& vec) noexcept(false)
   f << vec.size();
   for (auto&& i : vec)
     f << i;
-  return *this;
+  return f;
 }
 
 template<typename T, typename = std::enable_if_t<!std::is_pod_v<T>>>
@@ -274,7 +270,7 @@ operator>>(const CFile64& f, std::vector<T>& vec) noexcept(false)
   vec.resize(size);
   for (auto&& i : vec)
     f >> i;
-  return *this;
+  return f;
 }
 
 } // namespace Lib

@@ -13,7 +13,16 @@ namespace Lib {
 class KMeans : public Profiler
 {
 public:
+  DataSet::value_type eps{ 1e-8 }; ///< 收敛阈值
+  DataSet::value_type sse;
+
+public:
   KMeans() = default;
+
+  KMeans(DataSet::value_type eps)
+    : eps(eps)
+  {
+  }
 
   KMeans(const Profiler& prof)
     : Profiler(prof)
@@ -27,9 +36,6 @@ public:
    * @param[out] cata 聚类结果
    * @param[out] mse 误差
    */
-  DataSet::value_type error; //每轮迭代后，中心点相比上一轮的距离差
-  DataSet::value_type eps = 1e-8;   //收敛阈值
-  DataSet::value_type sse;
   void operator()(const DataSet& data,
                   int k,
                   Catalog* cata,

@@ -154,7 +154,7 @@ kmeans(int argc, char* argv[])
     {
       std::cout << (entry.mTime - initial()) << " " << entry.mTag;
       if (entry.mInfo)
-        std::cout << " " << entry.mInfo;
+        std::cout << " " << entry.mInfo->info();
       std::cout << '\n';
     }
   } algo;

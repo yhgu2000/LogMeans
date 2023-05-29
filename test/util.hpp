@@ -94,6 +94,17 @@ index(std::size_t end)
 }
 
 /**
+ * @brief 生成[min,max]间的随机整数。
+ */
+template<typename T>
+inline T
+range(T min = std::numeric_limits<T>::min(),
+      T max = std::numeric_limits<T>::max())
+{
+  return std::uniform_int_distribution<T>(min, max)(gRand);
+}
+
+/**
  * @brief 生成期望将0~1均匀分成n+1份的随机分割点数列，返回的数列已按升序排序。
  */
 std::vector<double>
