@@ -20,7 +20,7 @@ with open(filename, 'r') as f:
 
 # 将数据保存到字典中
 data_dict = {
-    "dataset":{
+    "dataset": {
         'rows': b,
         'cols': a,  
         'data': data_list
