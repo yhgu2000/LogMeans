@@ -84,8 +84,6 @@ KMeans::operator()(const DataSet& data,
     // 对数据集中每个点，找到最近的k_idx
     sse = cal_sse(data_nums,k,data,&new_labels,new_centers);
 
-    std::cout<<sse;
-
     centers = new_centers;
     step++;
 
