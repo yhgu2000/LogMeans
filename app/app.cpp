@@ -76,6 +76,12 @@ parse_input(const char* path,
   else
     matx_load_bin(ds, dataset.as_string().c_str());
 
+  std::cout << "DataSet: " << ds->rows() << " rows, "
+            << ds->cols() << " cols\nFirst: ";
+  for (int i = 0; i < ds->rows(); ++i)
+    std::cout << (*ds)(i) << " ";
+  std::cout << std::endl;
+
   auto iter = obj.find("cata");
   if (iter != obj.end())
     *cataOut = iter->value().as_string();
@@ -290,6 +296,8 @@ example_1(int argc, char* argv[])
     ]
   },
   "cata": "cata.matx",
+  "kmin": 2,
+  "kmax: 2,
 })" << std::endl;
   return 0;
 }
@@ -299,6 +307,8 @@ example_2(int argc, char* argv[])
 {
   std::cout << R"({
   "dataset": "data.matx",
+  "kmin": 2,
+  "kmax: 3,
 })" << std::endl;
 
   DataSet ds;
