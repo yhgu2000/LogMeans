@@ -12,18 +12,21 @@ KMeans::operator()(const DataSet& data,
                    Catalog* cata,
                    DataSet::value_type* mse)
 {
+  static thread_local std::default_random_engine sRand{
+    std::random_device()()
+  };
+
   Scope scopeKMeans(*this, "KMeans");
 
   int dims = data.rows();
   int dataNums = data.cols();
-  std::default_random_engine gen{ std::random_device()() };
 
   // 初始化：从数据中随机选k个
   DataSet centers(dims, k);
-  {
-    for (int i = 0; i < k; ++i)
-      centers.col(i) = data.col(std::uniform_int_distribution<>(
-        i * dataNums / k, (i + 1) * dataNums / k)(gen));
+  for (std::uint64_t i = 0; i < k; ++i) {
+    auto x = std::uniform_int_distribution<>(i * dataNums / k,
+                                             (i + 1) * dataNums / k - 1)(sRand);
+    centers.col(i) = data.col(x);
   }
 
   auto& labels = *cata;
@@ -37,7 +40,7 @@ KMeans::operator()(const DataSet& data,
     // 分类，对数据集中每个点，找到最近的k_idx
     DataSet::value_type sse = 0;
 #pragma omp parallel for reduction(+ : sse)
-    for (int i = 0; i < dataNums; i++) {
+    for (int i = 0; i < dataNums; ++i) {
       DataSet::value_type minDist =
         std::numeric_limits<DataSet::value_type>::max();
       int minIdx = -1;
@@ -54,6 +57,7 @@ KMeans::operator()(const DataSet& data,
     // 更新聚类中心
     kcount.setZero();
     centersNew.setZero();
+#pragma omp parallel for
     for (int i = 0; i < dataNums; ++i) {
       int tmp = labels(i);
       centersNew.col(tmp) += data.col(i);
@@ -62,7 +66,7 @@ KMeans::operator()(const DataSet& data,
     for (int i = 0; i < k; ++i) {
       if (kcount(i) == 0) {
         // 应对离群中心点，重新随机生成
-        int idx = std::uniform_int_distribution<>(0, dataNums)(gen);
+        int idx = std::uniform_int_distribution<>(0, dataNums - 1)(sRand);
         centersNew.col(i) = data.col(idx);
       } else {
         centersNew.col(i) /= kcount(i);

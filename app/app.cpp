@@ -18,6 +18,8 @@ JSON IO Format Definitions:
   Input ::= {
     "dataset": Matx | string,   # string for binary output path
     "cata": string?,            # output binary if exists
+    "kmin": number,             # serach range [kmin, kmax]
+    "kmax": number,
     }
   Output ::= {
     "cata": Matx | string,      # string for binary output path
@@ -43,9 +45,15 @@ JSON IO Format Definitions:
  * @param[in] path JSON 输入文件路径。
  * @param[out] ds 数据集。
  * @param[out] cataOut 类别输出路径，如果为空则表示以 JSON 格式输出。
+ * @param[out] kmin 最小聚类数。
+ * @param[out] kmax 最大聚类数。
  */
 void
-parse_input(const char* path, DataSet* ds, std::string* cataOut)
+parse_input(const char* path,
+            DataSet* ds,
+            std::string* cataOut,
+            int* kmin,
+            int* kmax)
 {
   bj::value val;
   {
@@ -71,6 +79,9 @@ parse_input(const char* path, DataSet* ds, std::string* cataOut)
   auto iter = obj.find("cata");
   if (iter != obj.end())
     *cataOut = iter->value().as_string();
+
+  *kmin = obj.at("kmin").as_int64();
+  *kmax = obj.at("kmax").as_int64();
 }
 
 /**
@@ -118,6 +129,21 @@ static std::regex gReportFilter = []() {
   return std::regex(re);
 }();
 
+template<typename T>
+class Algo : public T
+{
+  void report(Profiler::Entry& entry) noexcept override
+  {
+    if (!std::regex_match(entry.mTag, gReportFilter))
+      return;
+
+    std::cout << (entry.mTime - Profiler::initial()) << " " << entry.mTag;
+    if (entry.mInfo)
+      std::cout << " " << entry.mInfo->info();
+    std::cout << '\n';
+  }
+};
+
 int
 kmeans(int argc, char* argv[])
 {
@@ -126,7 +152,6 @@ kmeans(int argc, char* argv[])
     ("help,h", "print help info")                              //
     ("input,i", po::value<std::string>(), "input json path")   //
     ("output,o", po::value<std::string>(), "output json path") //
-    ("k", po::value<int>(), "number of clusters")              //
     ;
 
   po::positional_options_description pod;
@@ -147,31 +172,19 @@ kmeans(int argc, char* argv[])
 
   auto input = vmap["input"].as<std::string>();
   auto output = vmap["output"].as<std::string>();
-  auto k = vmap["k"].as<int>();
 
   DataSet ds;
   std::string cataOut;
-  parse_input(input.c_str(), &ds, &cataOut);
+  int minK, maxK;
+  parse_input(input.c_str(), &ds, &cataOut, &minK, &maxK);
 
   Catalog cata;
   DataSet::value_type mse;
 
-  class Algo : public KMeans
-  {
-    void report(Entry& entry) noexcept override
-    {
-      if (!std::regex_match(entry.mTag, gReportFilter))
-        return;
+  Algo<KMeans> algo;
+  algo(ds, minK, &cata, &mse);
 
-      std::cout << (entry.mTime - initial()) << " " << entry.mTag;
-      if (entry.mInfo)
-        std::cout << " " << entry.mInfo->info();
-      std::cout << '\n';
-    }
-  } algo;
-  algo(ds, k, &cata, &mse);
-
-  generate_output(output.c_str(), cata, cataOut, k, mse, MseHistory(), algo);
+  generate_output(output.c_str(), cata, cataOut, minK, mse, MseHistory(), algo);
 
   return 0;
 }
@@ -206,7 +219,8 @@ algo_run(int argc, char* argv[], int which)
 
   DataSet ds;
   std::string cataOut;
-  parse_input(input.c_str(), &ds, &cataOut);
+  int minK, maxK;
+  parse_input(input.c_str(), &ds, &cataOut, &minK, &maxK);
 
   Catalog cata;
   MseHistory mseHist;
@@ -215,20 +229,20 @@ algo_run(int argc, char* argv[], int which)
 
   switch (which) {
     case 0: {
-      Elbow elbow;
-      elbow(ds, &cata, &mseHist, &ansIndex);
+      Algo<Elbow> elbow;
+      elbow(ds, &cata, &mseHist, &ansIndex, minK, maxK);
       prof = elbow;
     } break;
 
     case 1: {
-      LogMeans logmeans;
-      logmeans(ds, &cata, &mseHist, &ansIndex);
+      Algo<LogMeans> logmeans;
+      logmeans(ds, &cata, &mseHist, &ansIndex, minK, maxK);
       prof = logmeans;
     } break;
 
     case 2: {
-      LogMeans logmeans;
-      logmeans.binary_search(ds, &cata, &mseHist, &ansIndex);
+      Algo<LogMeans> logmeans;
+      logmeans.binary_search(ds, &cata, &mseHist, &ansIndex, minK, maxK);
       prof = logmeans;
     } break;
   }

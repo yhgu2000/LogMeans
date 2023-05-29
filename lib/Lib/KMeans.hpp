@@ -13,7 +13,8 @@ namespace Lib {
 class KMeans : public Profiler
 {
 public:
-  DataSet::value_type eps{ 1e-8 }; ///< 收敛阈值
+  // DataSet::value_type eps{ 1e-8 }; ///< 收敛阈值
+  DataSet::value_type eps{ 1 }; ///< 收敛阈值
 
 public:
   KMeans() = default;

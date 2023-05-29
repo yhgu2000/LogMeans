@@ -4,6 +4,7 @@
 #include <map>
 #include <tuple>
 #include <vector>
+#include <iostream>
 
 #define self (*this)
 
@@ -143,8 +144,12 @@ void
 LogMeans::operator()(const DataSet& data,
                      Catalog* cata,
                      MseHistory* mseHist,
-                     std::size_t* ansIndex)
+                     std::size_t* ansIndex,
+                     int minK,
+                     int maxK)
 {
+  Profiler::Scope scopeProf(*this, "LogMeans");
+
   mseHist->clear();
 
   std::map<int, std::size_t> cache;
@@ -154,21 +159,24 @@ LogMeans::operator()(const DataSet& data,
    * mseHist 中保存的是聚类数 k 到 mse 的映射。
    */
 
+  std::cout << minK << " " << maxK << std::endl;
   std::size_t lftIndex = 0;
-  cache.emplace(1, 0);
+  cache.emplace(minK, 0);
   {
     DataSet::value_type mse;
-    mKMeans(data, 1, cata, &mse);
-    mseHist->emplace_back(1, mse);
+    mKMeans(data, minK, cata, &mse);
+    mseHist->emplace_back(minK, mse);
   }
 
   std::size_t rhtIndex = 1;
-  cache.emplace(int(data.cols()), 1);
+  cache.emplace(maxK, 1);
   {
     DataSet::value_type mse;
-    mKMeans(data, data.cols(), cata, &mse);
-    mseHist->emplace_back(int(data.cols()), mse);
+    mKMeans(data, maxK, cata, &mse);
+    mseHist->emplace_back(maxK, mse);
   }
+
+  time("LogMeans-iterstart");
 
   auto& hist = *mseHist;
   Heap heap(hist);
@@ -194,6 +202,8 @@ LogMeans::operator()(const DataSet& data,
 
     auto top = heap.heap_pop();
     lftIndex = top.mL, rhtIndex = top.mR;
+
+    time("LogMeans-iter");
   }
 
   *ansIndex = rhtIndex;
@@ -203,11 +213,15 @@ void
 LogMeans::binary_search(const DataSet& data,
                         Catalog* cata,
                         MseHistory* mseHist,
-                        std::size_t* ansIndex)
+                        std::size_t* ansIndex,
+                        int minK,
+                        int maxK)
 {
+  Profiler::Scope scopeProf(*this, "LogMeans.bs");
+
   mseHist->clear();
 
-  int lft = 1, rht = data.cols();
+  int lft = minK, rht = maxK;
   DataSet::value_type lftMse, rhtMse;
 
   mKMeans(data, lft, cata, &lftMse);
@@ -227,9 +241,17 @@ LogMeans::binary_search(const DataSet& data,
       rht = mid, rhtMse = midMse;
     else
       lft = mid, lftMse = midMse;
+
+    time("LogMeans.bs-iter");
   }
 
   *ansIndex = mseHist->size() - 1;
+}
+
+void
+LogMeans::KMeans::report(Profiler::Entry& entry) noexcept
+{
+  mSelf.report(entry);
 }
 
 } // namespace Lib
