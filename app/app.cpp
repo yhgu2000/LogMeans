@@ -6,6 +6,7 @@
 #include <fstream>
 #include <iomanip>
 #include <iostream>
+#include <regex>
 
 using namespace std::string_literals;
 using namespace Lib;
@@ -110,6 +111,13 @@ generate_output(const char* path,
   fout << obj << std::endl;
 }
 
+static std::regex gReportFilter = []() {
+  const char* re = std::getenv("REPORT_FILTER");
+  if (!re)
+    re = ".*";
+  return std::regex(re);
+}();
+
 int
 kmeans(int argc, char* argv[])
 {
@@ -152,6 +160,9 @@ kmeans(int argc, char* argv[])
   {
     void report(Entry& entry) noexcept override
     {
+      if (!std::regex_match(entry.mTag, gReportFilter))
+        return;
+
       std::cout << (entry.mTime - initial()) << " " << entry.mTag;
       if (entry.mInfo)
         std::cout << " " << entry.mInfo->info();
