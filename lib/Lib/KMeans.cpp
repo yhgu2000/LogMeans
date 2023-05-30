@@ -31,7 +31,7 @@ KMeans::operator()(const DataSet& data, int k, Catalog* cata, double* mse)
   auto& labels = *cata;
   labels.resize(dataNums);
   Eigen::VectorXi kcount(k); // 每轮隶属某个中心点的点数量
-  double mseLast = 1e-9;
+  double mseLast = 0;
   for (int step = 0;; step++) {
     // 分类，对数据集中每个点，找到最近的k_idx
     double sse = 0;
@@ -70,10 +70,9 @@ KMeans::operator()(const DataSet& data, int k, Catalog* cata, double* mse)
     }
 
     // 收敛条件
-    if (std::abs((*mse - mseLast) / mseLast) < mEpsRatio)
+    if (std::abs((*mse - mseLast) / *mse) < mEpsRatio)
       break;
-    // mseLast = (mseLast + *mse) / 2;滑
-    mseLast = *mse;
+    mseLast = (mseLast + *mse) / 2; // 平滑
 
     struct IterInfo : public Profiler::Info
     {
