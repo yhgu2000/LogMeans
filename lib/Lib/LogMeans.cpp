@@ -1,10 +1,10 @@
 #include "LogMeans.hpp"
 
 #include <cassert>
+#include <iostream>
 #include <map>
 #include <tuple>
 #include <vector>
-#include <iostream>
 
 #define self (*this)
 
@@ -35,14 +35,14 @@ struct Heap : public std::vector<HeapEntry>
 
   bool lt(const HeapEntry& lhs, const HeapEntry& rhs) const
   {
-    return (mMseHist[lhs.mR].second / mMseHist[lhs.mL].second) <
-           (mMseHist[rhs.mR].second / mMseHist[rhs.mL].second);
+    return (mMseHist[lhs.mL].second / mMseHist[lhs.mR].second) <
+           (mMseHist[rhs.mL].second / mMseHist[rhs.mR].second);
   }
 
   bool gt(const HeapEntry& lhs, const HeapEntry& rhs) const
   {
-    return (mMseHist[lhs.mR].second / mMseHist[lhs.mL].second) >
-           (mMseHist[rhs.mR].second / mMseHist[rhs.mL].second);
+    return (mMseHist[lhs.mL].second / mMseHist[lhs.mR].second) >
+           (mMseHist[rhs.mL].second / mMseHist[rhs.mR].second);
   }
 
   // void heapify();
@@ -107,6 +107,8 @@ Heap::heap_pop()
   assert(size() > 1);
 
   auto ret = std::move(self[1]);
+  self[1] = std::move(back());
+  pop_back();
 
   auto i = 1;
   auto* parent = &self[i];
@@ -117,24 +119,30 @@ Heap::heap_pop()
       auto& rchild = self[i + 1];
 
       if (gt(lchild, rchild)) {
-        *parent = std::move(lchild);
+        if (!gt(lchild, *parent))
+          break;
+
+        std::swap(*parent, lchild);
         parent = &lchild;
       }
 
-      else {
-        *parent = std::move(rchild);
+      else if (gt(rchild, *parent)) {
+        std::swap(*parent, rchild);
         parent = &rchild;
         ++i;
       }
+
+      else
+        break;
     }
 
     else {
-      *parent = std::move(lchild);
+      if (gt(lchild, *parent))
+        std::swap(*parent, lchild);
       break;
     }
   }
 
-  pop_back();
   return ret;
 }
 
@@ -152,15 +160,12 @@ LogMeans::operator()(const DataSet& data,
 
   mseHist->clear();
 
-  std::map<int, std::size_t> cache;
-
   /**
    * xxxIndex 变量里存的是 mseHist 中项的索引，
    * mseHist 中保存的是聚类数 k 到 mse 的映射。
    */
 
   std::size_t lftIndex = 0;
-  cache.emplace(minK, 0);
   {
     double mse;
     mKMeans(data, minK, cata, &mse);
@@ -168,7 +173,6 @@ LogMeans::operator()(const DataSet& data,
   }
 
   std::size_t rhtIndex = 1;
-  cache.emplace(maxK, 1);
   {
     double mse;
     mKMeans(data, maxK, cata, &mse);
@@ -180,21 +184,15 @@ LogMeans::operator()(const DataSet& data,
   auto& hist = *mseHist;
   Heap heap(hist);
   while (hist[rhtIndex].first - hist[lftIndex].first > 1) {
-    auto mid = (hist[rhtIndex].first + hist[lftIndex].first) / 2;
+    auto lft = hist[lftIndex].first;
+    auto rht = hist[rhtIndex].first;
+    auto mid = (lft + rht) / 2;
     std::size_t midIndex;
 
-    auto it = cache.find(mid);
-    if (it != cache.end())
-      midIndex = it->second;
-
-    else {
-      midIndex = mseHist->size();
-      cache.emplace_hint(it, mid, midIndex);
-
-      double mse;
-      mKMeans(data, mid, cata, &mse);
-      mseHist->emplace_back(mid, mse);
-    }
+    midIndex = mseHist->size();
+    double mse;
+    mKMeans(data, mid, cata, &mse);
+    mseHist->emplace_back(mid, mse);
 
     heap.heap_push({ lftIndex, midIndex });
     heap.heap_push({ midIndex, rhtIndex });
@@ -236,7 +234,7 @@ LogMeans::binary_search(const DataSet& data,
     mKMeans(data, mid, cata, &midMse);
     mseHist->emplace_back(mid, midMse);
 
-    if (midMse / lftMse > rhtMse / midMse)
+    if (lftMse / midMse > midMse / rhtMse)
       rht = mid, rhtMse = midMse;
     else
       lft = mid, lftMse = midMse;
