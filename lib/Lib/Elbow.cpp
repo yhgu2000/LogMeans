@@ -23,7 +23,7 @@ Elbow::operator()(const DataSet& data,
   std::size_t elbowK = 1;
 
   for (int k = minK; k <= maxK; k++) {
-    DataSet::value_type mse;
+    double mse;
     mKMeans(data, k, cata, &mse);
     DataSet::value_type tmp_mseRate = prevMse / mse;
     if (tmp_mseRate > mseRate) {

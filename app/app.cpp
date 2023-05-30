@@ -189,7 +189,7 @@ kmeans(int argc, char* argv[])
   parse_input(input.c_str(), &ds, &cataOut, &minK, &maxK);
 
   Catalog cata;
-  DataSet::value_type mse;
+  double mse;
 
   Algo<KMeans> algo;
   algo(ds, minK, &cata, &mse);

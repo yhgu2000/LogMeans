@@ -1,5 +1,6 @@
 #include "KMeans.hpp"
 #include <random>
+#include <sstream>
 #include <string>
 
 using namespace std::string_literals;
@@ -7,12 +8,9 @@ using namespace std::string_literals;
 namespace Lib {
 
 void
-KMeans::operator()(const DataSet& data,
-                   int k,
-                   Catalog* cata,
-                   DataSet::value_type* mse)
+KMeans::operator()(const DataSet& data, int k, Catalog* cata, double* mse)
 {
-  static thread_local std::default_random_engine sRand{
+  static thread_local std::default_random_engine stRand{
     std::random_device()()
   };
 
@@ -24,8 +22,8 @@ KMeans::operator()(const DataSet& data,
   // 初始化：从数据中随机选k个
   DataSet centers(dims, k);
   for (std::uint64_t i = 0; i < k; ++i) {
-    auto x = std::uniform_int_distribution<>(i * dataNums / k,
-                                             (i + 1) * dataNums / k - 1)(sRand);
+    auto x = std::uniform_int_distribution<>(
+      i * dataNums / k, (i + 1) * dataNums / k - 1)(stRand);
     centers.col(i) = data.col(x);
   }
   time("KMeans-init");
@@ -33,22 +31,22 @@ KMeans::operator()(const DataSet& data,
   auto& labels = *cata;
   labels.resize(dataNums);
   Eigen::VectorXi kcount(k); // 每轮隶属某个中心点的点数量
-  DataSet::value_type mseLast = 1e-9;
+  double mseLast = 1e-9;
   for (int step = 0;; step++) {
     // 分类，对数据集中每个点，找到最近的k_idx
-    DataSet::value_type sse = 0;
+    double sse = 0;
 #pragma omp parallel for reduction(+ : sse)
     for (int i = 0; i < dataNums; ++i) {
-      DataSet::value_type minDist =
-        std::numeric_limits<DataSet::value_type>::max();
+      auto minDist = std::numeric_limits<DataSet::value_type>::max();
       int minIdx = -1;
       for (int j = 0; j < k; j++) {
-        DataSet::value_type dist = (data.col(i) - centers.col(j)).norm();
+        auto dist = (data.col(i) - centers.col(j)).norm();
         if (dist < minDist)
           minDist = dist, minIdx = j;
       }
       labels(i) = minIdx;
-      sse += minDist / dataNums; // 在加之前先除，防止数据过大而溢出
+      assert(minIdx != -1);
+      sse += double(minDist) / dataNums; // 在加之前先除，防止数据过大而溢出
     }
     *mse = sse;
 
@@ -64,7 +62,7 @@ KMeans::operator()(const DataSet& data,
     for (int i = 0; i < k; ++i) {
       if (kcount(i) == 0) {
         // 应对离群中心点，重新随机生成
-        int idx = std::uniform_int_distribution<>(0, dataNums - 1)(sRand);
+        int idx = std::uniform_int_distribution<>(0, dataNums - 1)(stRand);
         centers.col(i) = data.col(idx);
       } else {
         centers.col(i) /= kcount(i);
@@ -74,14 +72,15 @@ KMeans::operator()(const DataSet& data,
     // 收敛条件
     if (std::abs((*mse - mseLast) / mseLast) < mEpsRatio)
       break;
-    mseLast = (mseLast + *mse) / 2; // 平滑
+    // mseLast = (mseLast + *mse) / 2;滑
+    mseLast = *mse;
 
     struct IterInfo : public Profiler::Info
     {
       int mStep;
-      DataSet::value_type mMse;
+      double mMse;
 
-      IterInfo(int step, DataSet::value_type mse)
+      IterInfo(int step, double mse)
         : mStep(step)
         , mMse(mse)
       {

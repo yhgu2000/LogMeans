@@ -162,7 +162,7 @@ LogMeans::operator()(const DataSet& data,
   std::size_t lftIndex = 0;
   cache.emplace(minK, 0);
   {
-    DataSet::value_type mse;
+    double mse;
     mKMeans(data, minK, cata, &mse);
     mseHist->emplace_back(minK, mse);
   }
@@ -170,7 +170,7 @@ LogMeans::operator()(const DataSet& data,
   std::size_t rhtIndex = 1;
   cache.emplace(maxK, 1);
   {
-    DataSet::value_type mse;
+    double mse;
     mKMeans(data, maxK, cata, &mse);
     mseHist->emplace_back(maxK, mse);
   }
@@ -191,7 +191,7 @@ LogMeans::operator()(const DataSet& data,
       midIndex = mseHist->size();
       cache.emplace_hint(it, mid, midIndex);
 
-      DataSet::value_type mse;
+      double mse;
       mKMeans(data, mid, cata, &mse);
       mseHist->emplace_back(mid, mse);
     }
@@ -221,7 +221,7 @@ LogMeans::binary_search(const DataSet& data,
   mseHist->clear();
 
   int lft = minK, rht = maxK;
-  DataSet::value_type lftMse, rhtMse;
+  double lftMse, rhtMse;
 
   mKMeans(data, lft, cata, &lftMse);
   mseHist->emplace_back(lft, lftMse);
@@ -231,7 +231,7 @@ LogMeans::binary_search(const DataSet& data,
 
   while (rht - lft > 1) {
     auto mid = (lft + rht) / 2;
-    DataSet::value_type midMse;
+    double midMse;
 
     mKMeans(data, mid, cata, &midMse);
     mseHist->emplace_back(mid, midMse);
