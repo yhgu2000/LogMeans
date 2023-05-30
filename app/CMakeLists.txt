@@ -24,3 +24,14 @@ target_include_directories(timestamp INTERFACE ${CMAKE_CURRENT_BINARY_DIR})
 add_executable(app app.cpp)
 
 target_link_libraries(app PUBLIC Lib Boost::program_options timestamp)
+
+
+
+#
+# 检查构建命令
+#
+add_executable(app_check_cxx app.cpp)
+
+target_compile_options(app_check_cxx PRIVATE -v -E)
+
+target_link_libraries(app_check_cxx PUBLIC Lib Boost::program_options timestamp)

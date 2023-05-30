@@ -15,7 +15,7 @@ namespace bj = boost::json;
 /**
  * @brief 数据集，每列是一个数据点，列号为 ID。
  */
-using DataSet = Eigen::MatrixXd;
+using DataSet = Eigen::MatrixXf;
 
 /**
  * @brief 聚类结果，一个列向量，每行的整数是数据集对应列的类别号。

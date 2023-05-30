@@ -5,7 +5,7 @@
 
 
 # 语言标准
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
 
 
@@ -23,6 +23,13 @@ if (NOT Boost_USE_STATIC_LIBS)
   target_link_libraries(Boost::boost INTERFACE Boost::dynamic_linking)
   target_link_libraries(Boost::program_options INTERFACE Boost::dynamic_linking)
   target_link_libraries(Boost::json INTERFACE Boost::dynamic_linking)
+endif()
+
+# 使能 SIMD 指令集
+if (MSVC)
+  add_compile_options("/arch:AVX2")
+else()
+  add_compile_options("-march=native")
 endif()
 
 

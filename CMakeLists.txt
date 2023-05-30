@@ -8,7 +8,7 @@ if(NOT _env_cmake_found)
   include(env.cmake.example OPTIONAL)
 endif()
 
-project(LogMeans VERSION 0.0.0.0)
+project(LogMeans VERSION 1.0.0.0)
 # 这里应使用 CamelCase 以贴合 cmake 导出文件的命名风格
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/cmake)

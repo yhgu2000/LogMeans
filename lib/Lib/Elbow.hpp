@@ -1,8 +1,8 @@
 #pragma once
 
+#include "KMeans.hpp"
 #include "Profiler.hpp"
 #include "lib.hpp"
-#include "KMeans.hpp"
 
 namespace Lib {
 
@@ -14,15 +14,30 @@ public:
    * @param[out] cata 聚类结果
    * @param[out] mseHist 误差历史
    * @param[out] ansIndex 最终结果在 \p mseHist 中的索引
+   * @param[in] minK 最小聚类数
+   * @param[in] maxK 最大聚类数
    */
   void operator()(const DataSet& data,
                   Catalog* cata,
                   MseHistory* mseHist,
-                  std::size_t* ansIndex);
+                  std::size_t* ansIndex,
+                  int minK,
+                  int maxK);
 
 private:
-  KMeans mKMeans;
+  class KMeans : public Lib::KMeans
+  {
+    Elbow& mSelf;
 
+  public:
+    KMeans(Elbow& self)
+      : Lib::KMeans(self)
+      , mSelf(self)
+    {
+    }
+
+    void report(Profiler::Entry& entry) noexcept override;
+  } mKMeans{ *this };
 };
 
 } // namespace Lib
