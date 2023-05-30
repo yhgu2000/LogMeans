@@ -48,9 +48,9 @@ KMeans::operator()(const DataSet& data,
           minDist = dist, minIdx = j;
       }
       labels(i) = minIdx;
-      sse += minDist;
+      sse += minDist / dataNums; // 在加之前先除，防止数据过大而溢出
     }
-    *mse = sse / dataNums;
+    *mse = sse;
 
     // 更新聚类中心
     centers.setZero();

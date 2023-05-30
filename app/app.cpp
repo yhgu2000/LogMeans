@@ -6,6 +6,7 @@
 #include <fstream>
 #include <iomanip>
 #include <iostream>
+#include <memory>
 #include <regex>
 
 using namespace std::string_literals;
@@ -76,8 +77,8 @@ parse_input(const char* path,
   else
     matx_load_bin(ds, dataset.as_string().c_str());
 
-  std::cout << "DataSet: " << ds->rows() << " rows, "
-            << ds->cols() << " cols\nFirst: ";
+  std::cout << "DataSet: " << ds->rows() << " rows, " << ds->cols()
+            << " cols\nFirst: ";
   for (int i = 0; i < ds->rows(); ++i)
     std::cout << (*ds)(i) << " ";
   std::cout << std::endl;
@@ -128,11 +129,11 @@ generate_output(const char* path,
   fout << obj << std::endl;
 }
 
-static std::regex gReportFilter = []() {
+static const auto kReportFilter = []() -> std::unique_ptr<std::regex> {
   const char* re = std::getenv("REPORT_FILTER");
   if (!re)
-    re = ".*";
-  return std::regex(re);
+    return nullptr;
+  return std::make_unique<std::regex>(re, std::regex_constants::basic);
 }();
 
 template<typename T>
@@ -140,8 +141,11 @@ class Algo : public T
 {
   void report(Profiler::Entry& entry) noexcept override
   {
-    if (!std::regex_match(entry.mTag, gReportFilter))
+    if (kReportFilter && !std::regex_match(entry.mTag, *kReportFilter))
       return;
+    // 不知道为什么，std::regex_match 会在KITSUNE数据集上报一个：
+    //   malloc(): unaligned tcache chunk detected
+    // 然后就崩溃了。
 
     std::cout << (entry.mTime - Profiler::initial()) << " " << entry.mTag;
     if (entry.mInfo)
@@ -297,7 +301,7 @@ example_1(int argc, char* argv[])
   },
   "cata": "cata.matx",
   "kmin": 2,
-  "kmax: 2,
+  "kmax": 2,
 })" << std::endl;
   return 0;
 }
@@ -308,7 +312,7 @@ example_2(int argc, char* argv[])
   std::cout << R"({
   "dataset": "data.matx",
   "kmin": 2,
-  "kmax: 3,
+  "kmax": 3,
 })" << std::endl;
 
   DataSet ds;
