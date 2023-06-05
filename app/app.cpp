@@ -58,15 +58,14 @@ parse_input(const char* path,
 {
   bj::value val;
   {
-    static const bj::parse_options kParseOption{
-      .max_depth = 4,
-      .allow_comments = true,
-      .allow_trailing_commas = true,
-      .allow_invalid_utf8 = false,
-    };
+    bj::parse_options parseOption;
+    parseOption.max_depth = 4;
+    parseOption.allow_comments = true;
+    parseOption.allow_trailing_commas = true;
+    parseOption.allow_invalid_utf8 = false;
 
     std::ifstream fin(path);
-    val = bj::parse(fin, {}, kParseOption);
+    val = bj::parse(fin, {}, parseOption);
   }
 
   const auto& obj = val.as_object();

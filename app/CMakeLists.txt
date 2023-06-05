@@ -25,6 +25,8 @@ add_executable(app app.cpp)
 
 target_link_libraries(app PUBLIC Lib Boost::program_options timestamp)
 
+install(TARGETS app EXPORT ${EXPORT_TARGETS})
+
 
 
 #

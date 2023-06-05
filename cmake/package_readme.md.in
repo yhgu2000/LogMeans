@@ -1,3 +1,43 @@
 # [${CMAKE_PROJECT_NAME} ${CMAKE_PROJECT_VERSION}](${CMAKE_PROJECT_HOMEPAGE_URL})
 
 ${CMAKE_PROJECT_DESCRIPTION}
+
+## 如何做实验
+
+1. 检查程序是否可以运行
+
+   ```
+   $ bin/app --version # 查看版本
+   $ bin/app --help    # 查看帮助
+   ```
+
+2. 将数据集转换为二进制格式
+
+   ```
+   $ python3 scripts/txt2bin.py <txt_file> <bin_file> float
+   ```
+
+   > 别忘了后面的 `float`，否则会转换成双精度类型！
+
+3. 编写 JSON 输入配置文件
+
+   可以使用 `bin/app example-1` 和 `bin/app example-2` 获得两个示例的配置文件，以下是 MNIST 数据集的配置文件参考：
+
+   ```json
+   {
+     "dataset": "MNIST.bin",  // 二进制数据集文件
+     "cata": "cata.matx",     // 将分类结果输出到二进制文件
+     "kmin": 2,   // 搜索的 k 值下界
+     "kmax": 100  // 搜索的 k 值上界
+   }
+   ```
+
+4. 运行算法
+
+   ```
+   $ bin/app elbow -i <json_input_file> -o <json_output_file>
+   $ bin/app logmeans -i <json_input_file> -o <json_output_file>
+   $ bin/app logmeans-m -i <json_input_file> -o <json_output_file>  // 二分查找版
+   ```
+
+   > 你可以设定 `REPORT_FILTER` 环境变量来根据标签筛选运行过程中的输出信息，其值为一个正则表达式，例如 `REPORT_FILTER='logmeans.*'` 会只打印 `logmeans` 前缀的输出信息。
