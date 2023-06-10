@@ -118,6 +118,13 @@ public:
               bool owned = false) noexcept;
 
   /**
+   * @brief 在子类中重载这个方法以监视计时。
+   *
+   * @param ent 本次计时构造的记录条目。
+   */
+  virtual void report(Entry& entry) noexcept;
+
+  /**
    * @brief 导出到 JSON。
    */
   bj::value to_json() const noexcept(false);
@@ -128,14 +135,6 @@ public:
   Iterator begin() const noexcept;
   Iterator end() const noexcept;
   ///@}
-
-protected:
-  /**
-   * @brief 在子类中重载这个方法以监视计时。
-   *
-   * @param ent 本次计时构造的记录条目。
-   */
-  virtual void report(Entry& entry) noexcept;
 
 private:
   std::shared_ptr<Entry> mHead;

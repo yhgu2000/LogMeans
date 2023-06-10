@@ -42,3 +42,6 @@ add_subdirectory(test)
 
 # 脚本
 add_subdirectory(cmake)
+
+# 实验脚本
+install(DIRECTORY scripts DESTINATION .)
